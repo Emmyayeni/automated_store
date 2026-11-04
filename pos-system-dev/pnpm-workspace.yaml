@@ -1,0 +1,10 @@
+onlyBuiltDependencies:
+  - '@serialport/bindings-cpp'
+  - edge-js
+  - printer
+  - usb
+ignoredBuiltDependencies:
+  - '@serialport/bindings-cpp'
+  - edge-js
+  - printer
+  - usb

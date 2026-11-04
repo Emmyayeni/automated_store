@@ -1,0 +1,110 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Start HardyPOS development server",
+			"type": "shell",
+			"command": "pnpm --dir pos-system-dev dev",
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Start HardyPOS with npm",
+			"type": "shell",
+			"command": "cd pos-system-dev && npm run dev",
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Run HardyPOS development server",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"dev",
+				"--prefix",
+				"pos-system-dev"
+			],
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Start HardyPOS server cmd",
+			"type": "shell",
+			"command": "cmd.exe",
+			"args": [
+				"/c",
+				"cd /d \"c:\\Users\\Ayeniemmy\\Desktop\\Automated store\\pos-system-dev\" && npm run dev"
+			],
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Check Node tooling",
+			"type": "shell",
+			"command": "cmd.exe",
+			"args": [
+				"/c",
+				"node --version && npm --version && if exist \"pos-system-dev\\node_modules\" (echo node_modules-present) else (echo node_modules-missing)"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Install HardyPOS dependencies",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"install",
+				"--prefix",
+				"pos-system-dev"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Install HardyPOS dependencies cmd",
+			"type": "shell",
+			"command": "npm.cmd",
+			"args": [
+				"install",
+				"--prefix",
+				"pos-system-dev"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Install HardyPOS dependencies legacy peers",
+			"type": "shell",
+			"command": "npm.cmd",
+			"args": [
+				"install",
+				"--prefix",
+				"pos-system-dev",
+				"--legacy-peer-deps"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Install HardyPOS dependencies retry",
+			"type": "shell",
+			"command": "cmd.exe",
+			"args": [
+				"/c",
+				"npm.cmd install --prefix pos-system-dev --legacy-peer-deps"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}
