@@ -58,17 +58,17 @@ export default function TeamPage() {
   const fetchUsers = async () => {
     setLoading(true)
     try {
-      const [uRes, bRes] = await Promise.all([
-        fetch("/api/admin/create-user"),
-        fetch("/api/admin/locations"),
-      ])
-      if (uRes.ok) {
-        const u = await uRes.json()
-        setMembers(u.data || u.users || u || [])
-      }
+      let bRes = await fetch("/api/admin/locations")
+      if (!bRes.ok) bRes = await fetch("/api/locations")
       if (bRes.ok) {
         const b = await bRes.json()
-        setBranches(b.data || b || [])
+        setBranches(Array.isArray(b) ? b : b.data || [])
+      }
+
+      const uRes = await fetch("/api/admin/create-user")
+      if (uRes.ok) {
+        const u = await uRes.json()
+        setMembers(u.users || u.data || u || [])
       }
     } catch (err) {
       console.error("Failed to fetch team:", err)

@@ -13,20 +13,19 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const businessId = searchParams.get('businessId')
+    const businessId = searchParams.get('businessId') || (session.user as any).businessId
     const category = searchParams.get('category')
     const search = searchParams.get('search')
     const sortBy = searchParams.get('sortBy') || 'name'
     const sortOrder = searchParams.get('sortOrder') || 'asc'
 
-    if (!businessId) {
-      return NextResponse.json({ error: 'Business ID is required' }, { status: 400 })
-    }
-
     // Build query conditions
-    let whereConditions = [eq(products.businessId, businessId)]
+    let whereConditions: any[] = []
+    if (businessId) {
+      whereConditions.push(eq(products.businessId, businessId))
+    }
     
-    if (category && category !== 'all') {
+    if (category && category !== 'all' && category !== 'ALL') {
       whereConditions.push(eq(products.category, category))
     }
 
@@ -58,7 +57,7 @@ export async function GET(request: NextRequest) {
         break
     }
 
-    const result = await db
+    const queryBuilder = db
       .select({
         id: products.id,
         businessId: products.businessId,
@@ -102,8 +101,10 @@ export async function GET(request: NextRequest) {
         updatedAt: products.updatedAt
       })
       .from(products)
-      .where(and(...whereConditions))
-      .orderBy(orderBy)
+
+    const result = whereConditions.length > 0
+      ? await queryBuilder.where(and(...whereConditions)).orderBy(orderBy)
+      : await queryBuilder.orderBy(orderBy)
 
     return NextResponse.json(result)
   } catch (error) {
@@ -123,11 +124,16 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+    let businessId = body.businessId || (session.user as any).businessId
+    if (!businessId) {
+      const [firstBiz] = await db.select({ id: businesses.id }).from(businesses).limit(1)
+      businessId = firstBiz?.id
+    }
     
     // Validate required fields
-    if (!body.name || !body.businessId || !body.category || !body.price) {
+    if (!body.name || !body.category || !body.price) {
       return NextResponse.json(
-        { error: 'Missing required fields: name, businessId, category, price' },
+        { error: 'Missing required fields: name, category, price' },
         { status: 400 }
       )
     }

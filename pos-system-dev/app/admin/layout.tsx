@@ -53,7 +53,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     email: sessionData?.user?.email || "admin@retail.com",
     role: (sessionData?.user?.role || "ADMIN").toUpperCase(),
     businessId: sessionData?.user?.businessId || null,
-    branchName: sessionData?.user?.branchName || "Downtown Central Hub",
+    branchName: sessionData?.user?.store?.name || sessionData?.user?.branchName || "Downtown Central Hub",
   }
 
   // Organized navigation groups
@@ -273,7 +273,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
         {/* Persistent / Responsive Sidebar Drawer (Stationary, independent scroll) */}
         <aside
-          className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200/90 flex flex-col shrink-0 h-full transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static ${
+          className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200/90 flex flex-col shrink-0 h-full lg:sticky lg:top-16 lg:h-[calc(100vh-4rem)] transform transition-transform duration-200 ease-in-out lg:translate-x-0 ${
             sidebarOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
           }`}
         >

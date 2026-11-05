@@ -93,20 +93,17 @@ export default function ShiftManagement() {
     try {
       // Fetch current active shift
       const activeResponse = await fetch(`/api/shifts?userId=${userId}&locationId=${locationId}&active=true`);
-      const activeShifts = await activeResponse.json();
+      const activeJson = await activeResponse.json().catch(() => []);
+      const activeShifts = Array.isArray(activeJson) ? activeJson : (activeJson?.data || []);
       setCurrentShift(activeShifts.length > 0 ? activeShifts[0] : null);
 
       // Fetch shift history
       const historyResponse = await fetch(`/api/shifts?userId=${userId}&locationId=${locationId}`);
-      const allShifts = await historyResponse.json();
+      const historyJson = await historyResponse.json().catch(() => []);
+      const allShifts = Array.isArray(historyJson) ? historyJson : (historyJson?.data || []);
       setShiftHistory(allShifts.filter((shift: Shift) => shift.status === "closed").slice(0, 5));
     } catch (error) {
       console.error("Error fetching shifts:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load shift data",
-        variant: "destructive",
-      });
     } finally {
       setLoading(false);
     }

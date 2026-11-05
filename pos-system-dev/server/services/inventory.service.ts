@@ -432,15 +432,25 @@ export async function getInventorySummary(locationId?: string) {
 
   const [result] = await db
     .select({
-      totalProducts: sql<number>`COUNT(*)`,
+      totalProducts: sql<number>`COUNT(DISTINCT ${inventory.productId})`,
       totalUnits: sql<number>`COALESCE(SUM(${inventory.quantity}), 0)`,
+      totalStockUnits: sql<number>`COALESCE(SUM(${inventory.quantity}), 0)`,
+      totalValuation: sql<number>`COALESCE(SUM(${inventory.quantity} * CAST(COALESCE(${products.price}, '0') AS NUMERIC)), 0)`,
       lowStockCount: sql<number>`COUNT(*) FILTER (WHERE ${inventory.stockStatus} = 'LOW_STOCK')`,
       outOfStockCount: sql<number>`COUNT(*) FILTER (WHERE ${inventory.stockStatus} = 'OUT_OF_STOCK')`,
     })
     .from(inventory)
+    .leftJoin(products, eq(inventory.productId, products.id))
     .where(condition);
 
-  return result;
+  return {
+    totalProducts: Number(result?.totalProducts || 0),
+    totalUnits: Number(result?.totalUnits || 0),
+    totalStockUnits: Number(result?.totalStockUnits || 0),
+    totalValuation: Number(result?.totalValuation || 0),
+    lowStockCount: Number(result?.lowStockCount || 0),
+    outOfStockCount: Number(result?.outOfStockCount || 0),
+  };
 }
 
 export async function getBranchInventory(locationId: string) {

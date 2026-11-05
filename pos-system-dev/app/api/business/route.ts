@@ -32,11 +32,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(errorResponse, { status });
     }
 
-    const [business] = await db
-      .select()
-      .from(businesses)
-      .where(eq(businesses.id, accessControl.user.businessId))
-      .limit(1);
+    let [business] = accessControl.user.businessId
+      ? await db
+          .select()
+          .from(businesses)
+          .where(eq(businesses.id, accessControl.user.businessId))
+          .limit(1)
+      : [];
+
+    if (!business) {
+      const [fallback] = await db.select().from(businesses).limit(1);
+      business = fallback;
+    }
 
     if (!business) {
       return NextResponse.json(createErrorResponse("Business not found", "BUSINESS_NOT_FOUND"), { status: 404 });

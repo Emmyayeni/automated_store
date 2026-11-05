@@ -111,17 +111,22 @@ export default function TransfersPage() {
 
     // Fetch branches & products for transfer dialog
     async function loadFormOptions() {
-      const [bRes, pRes] = await Promise.all([
-        fetch("/api/admin/locations"),
-        fetch("/api/admin/products"),
-      ])
-      if (bRes.ok) {
-        const b = await bRes.json()
-        setBranches(b.data || b || [])
-      }
-      if (pRes.ok) {
-        const p = await pRes.json()
-        setProducts(p.data || p || [])
+      try {
+        let bRes = await fetch("/api/admin/locations")
+        if (!bRes.ok) bRes = await fetch("/api/locations")
+        if (bRes.ok) {
+          const b = await bRes.json()
+          setBranches(Array.isArray(b) ? b : b.data || [])
+        }
+
+        let pRes = await fetch("/api/admin/products")
+        if (!pRes.ok) pRes = await fetch("/api/products")
+        if (pRes.ok) {
+          const p = await pRes.json()
+          setProducts(Array.isArray(p) ? p : p.data || [])
+        }
+      } catch (e) {
+        console.error("Error loading transfer form options:", e)
       }
     }
     loadFormOptions()

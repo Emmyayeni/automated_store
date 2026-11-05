@@ -62,9 +62,10 @@ export default function InventoryPage() {
       const res = await fetch(`/api/inventory?${params.toString()}`)
       if (res.ok) {
         const data = await res.json()
-        setItems(data.items || [])
+        const itemsList = Array.isArray(data) ? data : data.items || []
+        setItems(itemsList)
         setSummary(data.summary || null)
-        if (data.branches) setBranches(data.branches)
+        if (data.branches && data.branches.length > 0) setBranches(data.branches)
       }
     } catch (err) {
       console.error("Failed to load inventory:", err)

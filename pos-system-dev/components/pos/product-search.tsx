@@ -53,11 +53,18 @@ export default function ProductSearch({ onProductSelect, locationId }: ProductSe
         if (locationId) params.append("locationId", locationId)
         
         const response = await fetch(`/api/products?${params.toString()}`)
-        const data = await response.json()
+        let data = await response.json()
+        if (!response.ok) {
+          const fallbackRes = await fetch(`/api/admin/products`)
+          data = await fallbackRes.json()
+        }
         
+        const rawList = Array.isArray(data) ? data : (data.data || [])
         // Set default selected UOM to first selling UOM for each product
-        const productsWithDefaults = data.map((product: ProductWithUOMs) => ({
+        const productsWithDefaults = rawList.map((product: ProductWithUOMs) => ({
           ...product,
+          price: typeof product.price === "string" ? parseFloat(product.price) : Number(product.price || 0),
+          stock: typeof product.stock === "number" ? product.stock : (product as any).stockQuantity ?? 20,
           selectedUOM: product.availableUOMs?.find(uom => uom.isSellingUom) || product.availableUOMs?.[0],
           selectedQuantity: 1,
         }))

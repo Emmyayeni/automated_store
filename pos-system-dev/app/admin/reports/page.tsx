@@ -77,9 +77,19 @@ export default function ReportsPage() {
   }, [selectedBranch])
 
   useEffect(() => {
-    fetch("/api/admin/locations")
-      .then((r) => r.json())
-      .then((locs) => setBranches(locs.data || locs || []))
+    async function loadBranches() {
+      try {
+        let r = await fetch("/api/admin/locations")
+        if (!r.ok) r = await fetch("/api/locations")
+        if (r.ok) {
+          const locs = await r.json()
+          setBranches(Array.isArray(locs) ? locs : locs.data || [])
+        }
+      } catch (e) {
+        console.error("Error loading branches in reports:", e)
+      }
+    }
+    loadBranches()
   }, [])
 
   useEffect(() => {

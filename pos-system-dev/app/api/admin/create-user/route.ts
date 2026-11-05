@@ -2,36 +2,71 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { users } from "@/lib/schema";
+import { users, locations, businesses } from "@/lib/schema";
 import { eq, and } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
-export async function POST(req: NextRequest) {
+// GET /api/admin/create-user — List all staff members
+export async function GET(req: NextRequest) {
   try {
-    // Check if user is authenticated and is an admin
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (session.user.role !== "ADMIN") {
+    const allUsers = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        role: users.role,
+        locationId: users.locationId,
+        branchName: locations.name,
+        isActive: users.isActive,
+        createdAt: users.createdAt,
+      })
+      .from(users)
+      .leftJoin(locations, eq(users.locationId, locations.id))
+      .orderBy(users.name);
+
+    return NextResponse.json({
+      success: true,
+      users: allUsers,
+    });
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
+  }
+}
+
+// POST /api/admin/create-user — Register new staff member
+export async function POST(req: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userRole = ((session.user as any).role || "").toUpperCase();
+    if (userRole !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden - Admin access required" }, { status: 403 });
     }
 
     const { name, email, password, role, locationId } = await req.json();
 
     // Validate required fields
-    if (!name || !email || !password || !role || !locationId) {
+    if (!name || !email || !password || !role) {
       return NextResponse.json(
-        { error: "All fields are required: name, email, password, role, locationId" },
+        { error: "Name, email, password, and role are required" },
         { status: 400 }
       );
     }
 
     // Validate role
-    if (!["ADMIN", "MANAGER", "CASHIER"].includes(role)) {
+    const upperRole = role.toUpperCase();
+    if (!["ADMIN", "BRANCH_MANAGER", "MANAGER", "CLERK", "CASHIER"].includes(upperRole)) {
       return NextResponse.json(
-        { error: "Invalid role. Must be ADMIN, MANAGER, or CASHIER" },
+        { error: "Invalid role. Must be ADMIN, BRANCH_MANAGER, CLERK, or CASHIER" },
         { status: 400 }
       );
     }
@@ -45,7 +80,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validate password strength
+    // Validate password length
     if (password.length < 6) {
       return NextResponse.json(
         { error: "Password must be at least 6 characters long" },
@@ -53,39 +88,41 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if user already exists in this business
-    const existingUser = await db
+    let businessId = (session.user as any).businessId;
+    if (!businessId) {
+      const [firstBiz] = await db.select({ id: businesses.id }).from(businesses).limit(1);
+      businessId = firstBiz?.id;
+    }
+
+    // Check if user already exists
+    const [existingUser] = await db
       .select()
       .from(users)
-      .where(
-        and(
-          eq(users.email, email),
-          eq(users.businessId, session.user.businessId!)
-        )
-      )
+      .where(eq(users.email, email.toLowerCase().trim()))
       .limit(1);
 
-    if (existingUser.length > 0) {
+    if (existingUser) {
       return NextResponse.json(
-        { error: "A user with this email already exists in your business" },
+        { error: "A user with this email already exists" },
         { status: 409 }
       );
     }
 
     // Hash password
-    const passwordHash = await bcrypt.hash(password, 12);
+    const saltRounds = 10;
+    const passwordHash = await bcrypt.hash(password, saltRounds);
 
-    // Create the user
+    // Create user
     const [newUser] = await db
       .insert(users)
       .values({
         name: name.trim(),
         email: email.toLowerCase().trim(),
         passwordHash,
-        role,
-        businessId: session.user.businessId!,
-        locationId,
-        isActive: true, // User is immediately active
+        role: upperRole,
+        businessId: businessId || null,
+        locationId: locationId || null,
+        isActive: true,
         createdAt: new Date(),
       })
       .returning({
@@ -98,14 +135,6 @@ export async function POST(req: NextRequest) {
         createdAt: users.createdAt,
       });
 
-    if (!newUser) {
-      return NextResponse.json(
-        { error: "Failed to create user" },
-        { status: 500 }
-      );
-    }
-
-    // Return success response with created user data (excluding password)
     return NextResponse.json({
       success: true,
       message: "User created successfully",
@@ -114,17 +143,6 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error("Error creating user:", error);
-
-    // Handle specific database errors
-    if (error.code === '23505') {
-      if (error.constraint?.includes('email')) {
-        return NextResponse.json(
-          { error: "A user with this email already exists" },
-          { status: 409 }
-        );
-      }
-    }
-
     return NextResponse.json(
       { error: "An unexpected error occurred while creating the user" },
       { status: 500 }

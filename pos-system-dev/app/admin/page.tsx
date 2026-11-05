@@ -93,7 +93,10 @@ export default function AdminDashboard() {
       }
 
       // 3. Fetch branches
-      const locRes = await fetch(`/api/admin/locations`)
+      let locRes = await fetch(`/api/admin/locations`)
+      if (!locRes.ok) {
+        locRes = await fetch(`/api/locations`)
+      }
       if (locRes.ok) {
         const locJson = await locRes.json()
         const branchList = locJson?.data || locJson || []

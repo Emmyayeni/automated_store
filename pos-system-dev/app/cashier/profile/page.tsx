@@ -1,180 +1,204 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Label } from "@/components/ui/label";
-import { User, Settings } from "lucide-react";
+import React, { useState } from "react"
+import { useSession } from "next-auth/react"
+import Link from "next/link"
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
+import { Label } from "@/components/ui/label"
+import {
+  User,
+  Shield,
+  Store,
+  Mail,
+  KeyRound,
+  ArrowLeft,
+  CheckCircle2,
+  Clock
+} from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
+import { RoleBadge } from "@/components/ui/status-badge"
+import { toast } from "@/hooks/use-toast"
 
-// Centered modal component
-function Modal({
-  open,
-  onClose,
-  children,
-}: {
-  open: boolean;
-  onClose: () => void;
-  children: React.ReactNode;
-}) {
-  if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="flex items-center justify-center w-full h-full">
-        <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm relative">
-          <button
-            className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
-            onClick={onClose}
-            aria-label="Close"
-          >
-            ×
-          </button>
-          {children}
-        </div>
-      </div>
-    </div>
-  );
-}
+export default function CashierProfilePage() {
+  const { data: session } = useSession()
+  const sessionUser = (session as any)?.user
+  const cashierName = sessionUser?.name || "Cashier User"
+  const cashierEmail = sessionUser?.email || "cashier@retail.com"
+  const storeName = sessionUser?.store?.name || sessionUser?.branchName || "Main Supermarket Branch"
 
-export default function ProfilePage() {
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [oldPassword, setOldPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [oldPassword, setOldPassword] = useState("")
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [loading, setLoading] = useState(false)
 
-  const handleChangePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setMessage(null);
-
-    if (newPassword !== confirmPassword) {
-      setMessage("New passwords do not match.");
-      return;
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newPassword || newPassword !== confirmPassword) {
+      toast({
+        title: "Password Mismatch",
+        description: "New password and confirmation do not match.",
+        variant: "destructive",
+      })
+      return
     }
-    setLoading(true);
+
+    setLoading(true)
     try {
-      // Replace with your API endpoint
       const res = await fetch("/api/profile/change-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ oldPassword, newPassword }),
-      });
-      const data = await res.json();
+      })
+
       if (res.ok) {
-        setMessage("Password changed successfully.");
-        setOldPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
-        setTimeout(() => setShowPasswordModal(false), 1200);
+        toast({
+          title: "Password Updated",
+          description: "Your terminal security password has been changed.",
+        })
+        setOldPassword("")
+        setNewPassword("")
+        setConfirmPassword("")
       } else {
-        setMessage(data.error || "Failed to change password.");
+        const err = await res.json().catch(() => null)
+        toast({
+          title: "Update Failed",
+          description: err?.error || "Unable to update password.",
+          variant: "destructive",
+        })
       }
     } catch {
-      setMessage("Failed to change password.");
+      toast({
+        title: "Network Error",
+        description: "Unable to reach authentication server.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
     }
-    setLoading(false);
-  };
+  }
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-6">Profile</h2>
-      <div className="max-w-md mx-auto">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              My Profile
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="text-center">
-              <div className="w-20 h-20 bg-muted rounded-full mx-auto mb-4 flex items-center justify-center">
-                <User className="h-10 w-10 text-muted-foreground" />
+    <div className="space-y-6">
+      {/* ───────────────── PAGE HEADER ───────────────── */}
+      <PageHeader
+        title="Cashier Profile & Terminal Security"
+        description="View your active staff credentials, branch assignment, and update login credentials."
+        actions={
+          <Button asChild size="sm" className="h-9 bg-[#14532D] hover:bg-[#0f3e22] text-white text-xs">
+            <Link href="/cashier">
+              <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
+              Back to Register
+            </Link>
+          </Button>
+        }
+      />
+
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 max-w-4xl">
+        {/* User Card */}
+        <div className="md:col-span-5 space-y-4">
+          <Card className="border-slate-200 bg-white shadow-xs">
+            <CardHeader className="pb-3 border-b border-slate-100">
+              <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <User className="h-4 w-4 text-[#14532D]" />
+                Staff Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 space-y-4">
+              <div className="text-center py-2">
+                <div className="w-16 h-16 bg-[#14532D] text-white text-xl font-bold rounded-full mx-auto mb-3 flex items-center justify-center shadow-xs">
+                  {cashierName.charAt(0)}
+                </div>
+                <h3 className="font-extrabold text-slate-900 text-sm">{cashierName}</h3>
+                <div className="mt-1 flex justify-center">
+                  <RoleBadge role="CASHIER" />
+                </div>
               </div>
-              <h3 className="font-semibold">John Doe</h3>
-              <p className="text-sm text-muted-foreground">Cashier</p>
-            </div>
-            <Separator />
-            <div className="space-y-3">
-              <div>
-                <Label htmlFor="employee-id">Employee ID</Label>
-                <Input id="employee-id" value="EMP001" disabled />
+
+              <Separator className="bg-slate-100" />
+
+              <div className="space-y-3 text-xs">
+                <div className="flex items-center gap-2.5 text-slate-600">
+                  <Mail className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                  <span className="truncate">{cashierEmail}</span>
+                </div>
+                <div className="flex items-center gap-2.5 text-slate-600">
+                  <Store className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                  <span className="font-semibold text-slate-800">{storeName}</span>
+                </div>
+                <div className="flex items-center gap-2.5 text-slate-600">
+                  <Clock className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                  <span className="text-emerald-700 font-bold">Register Shift Active</span>
+                </div>
               </div>
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" value="john.doe@company.com" disabled />
-              </div>
-              <div>
-                <Label htmlFor="phone">Phone</Label>
-                <Input id="phone" value="+1 (555) 123-4567" disabled />
-              </div>
-            </div>
-            <Separator />
-            <div className="space-y-3">
-              <Button
-                variant="outline"
-                className="w-full bg-transparent"
-                onClick={() => setShowPasswordModal(true)}
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                Change Password
-              </Button>
-              <Button variant="outline" className="w-full bg-transparent">
-                <Settings className="h-4 w-4 mr-2" />
-                Change PIN
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Change Password Card */}
+        <div className="md:col-span-7 space-y-4">
+          <Card className="border-slate-200 bg-white shadow-xs">
+            <CardHeader className="pb-3 border-b border-slate-100">
+              <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <KeyRound className="h-4 w-4 text-[#14532D]" />
+                Update Cashier Passcode / Password
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4">
+              <form onSubmit={handleUpdatePassword} className="space-y-3">
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold text-slate-700">Current Password</Label>
+                  <Input
+                    type="password"
+                    value={oldPassword}
+                    onChange={(e) => setOldPassword(e.target.value)}
+                    placeholder="Enter current password"
+                    className="h-9 text-xs border-slate-300"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold text-slate-700">New Password</Label>
+                  <Input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Enter new secure password"
+                    className="h-9 text-xs border-slate-300"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold text-slate-700">Confirm New Password</Label>
+                  <Input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Re-enter new password"
+                    className="h-9 text-xs border-slate-300"
+                    required
+                  />
+                </div>
+
+                <div className="pt-2">
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full h-9 bg-[#14532D] hover:bg-[#0f3e22] text-white text-xs font-bold"
+                  >
+                    {loading ? "Updating..." : "Save Password Changes"}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-      <Modal open={showPasswordModal} onClose={() => setShowPasswordModal(false)}>
-        <form onSubmit={handleChangePassword} className="space-y-4">
-          <h3 className="text-lg font-semibold mb-2">Change Password</h3>
-          <div>
-            <Label htmlFor="old-password">Current Password</Label>
-            <Input
-              id="old-password"
-              type="password"
-              value={oldPassword}
-              onChange={e => setOldPassword(e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="new-password">New Password</Label>
-            <Input
-              id="new-password"
-              type="password"
-              value={newPassword}
-              onChange={e => setNewPassword(e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="confirm-password">Confirm New Password</Label>
-            <Input
-              id="confirm-password"
-              type="password"
-              value={confirmPassword}
-              onChange={e => setConfirmPassword(e.target.value)}
-              required
-            />
-          </div>
-          {message && (
-            <div className="text-sm text-center text-red-500">{message}</div>
-          )}
-          <div className="flex gap-2">
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Saving..." : "Change Password"}
-            </Button>
-            <Button type="button" variant="outline" onClick={() => setShowPasswordModal(false)}>
-              Cancel
-            </Button>
-          </div>
-        </form>
-      </Modal>
     </div>
-  );
+  )
 }

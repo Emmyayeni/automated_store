@@ -94,19 +94,18 @@ export default function StockInPage() {
   useEffect(() => {
     async function loadOptions() {
       try {
-        const [prodRes, locRes, movRes] = await Promise.all([
-          fetch("/api/admin/products"),
-          fetch("/api/admin/locations"),
-          fetch("/api/stock-movements?type=STOCK_IN&limit=5"),
-        ])
-
+        let prodRes = await fetch("/api/admin/products")
+        if (!prodRes.ok) prodRes = await fetch("/api/products")
         if (prodRes.ok) {
           const p = await prodRes.json()
-          setProducts(p.data || p || [])
+          setProducts(Array.isArray(p) ? p : p.data || [])
         }
+
+        let locRes = await fetch("/api/admin/locations")
+        if (!locRes.ok) locRes = await fetch("/api/locations")
         if (locRes.ok) {
           const l = await locRes.json()
-          const bList = l.data || l || []
+          const bList = Array.isArray(l) ? l : l.data || []
           setBranches(bList)
           // Default branch if user is scoped
           if (user?.locationId) {
@@ -115,9 +114,11 @@ export default function StockInPage() {
             setValue("locationId", bList[0].id)
           }
         }
+
+        const movRes = await fetch("/api/stock-movements?type=STOCK_IN&limit=5")
         if (movRes.ok) {
           const m = await movRes.json()
-          setRecentMovements(m || [])
+          setRecentMovements(Array.isArray(m) ? m : m.data || [])
         }
       } catch (err) {
         console.error("Error loading stock-in options:", err)

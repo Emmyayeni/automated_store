@@ -2,7 +2,7 @@ import { getServerSession, type NextAuthOptions, type User } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { DazzleAdapter } from "./dazzle-adapter";
 import { db } from "./db";
-import { users, locations } from "./schema";
+import { users, locations, businesses } from "./schema";
 import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 import { getLoginUrl } from "./subdomain-config";
@@ -65,13 +65,15 @@ export const authOptions: NextAuthOptions = {
         console.log("User role:", dbUser.role);
         console.log("User active:", dbUser.isActive);
 
-        // Fetch store details if locationId exists
+        // Fetch store details if locationId exists or fallback to first location
         let store = null;
-        if (dbUser.locationId) {
+        let resolvedLocationId = dbUser.locationId;
+
+        if (resolvedLocationId) {
           const [dbStore] = await db
             .select()
             .from(locations)
-            .where(eq(locations.id, dbUser.locationId))
+            .where(eq(locations.id, resolvedLocationId))
             .limit(1);
           if (dbStore) {
             store = {
@@ -80,9 +82,27 @@ export const authOptions: NextAuthOptions = {
               email: dbStore.email,
               phone: dbStore.phone,
               address: dbStore.address,
-              // code: dbStore.code, // removed because 'code' does not exist in locations schema
             };
           }
+        } else {
+          // Fallback to first branch for Admin or central users
+          const [firstLoc] = await db.select().from(locations).limit(1);
+          if (firstLoc) {
+            resolvedLocationId = firstLoc.id;
+            store = {
+              id: firstLoc.id,
+              name: firstLoc.name,
+              email: firstLoc.email,
+              phone: firstLoc.phone,
+              address: firstLoc.address,
+            };
+          }
+        }
+
+        let resolvedBusinessId = dbUser.businessId;
+        if (!resolvedBusinessId) {
+          const [firstBiz] = await db.select({ id: businesses.id }).from(businesses).limit(1);
+          resolvedBusinessId = firstBiz?.id ?? null;
         }
 
         return {
@@ -92,9 +112,9 @@ export const authOptions: NextAuthOptions = {
           image: null,
           role: dbUser.role,
           isActive: dbUser.isActive,
-          locationId: dbUser.locationId ?? null,
+          locationId: resolvedLocationId ?? null,
           store, // include store details
-          businessId: dbUser.businessId ?? null, // <-- ensure businessId is included
+          businessId: resolvedBusinessId, // <-- ensure businessId is included
         } as User & { [key: string]: any };
       },
     }),
@@ -102,10 +122,6 @@ export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
   callbacks: {
     async session({ session, token }) {
-      console.log("=== Session Callback ===");
-      console.log("Token role:", token.role);
-      console.log("Session before update:", session.user);
-      
       if (token && session.user) {
         session.user.id = token.sub as string;
         session.user.role = token.role as string;
@@ -116,13 +132,24 @@ export const authOptions: NextAuthOptions = {
         session.user.name = token.name as string;
       }
       
-      console.log("Session after update:", session.user);
+      if (session.user && !session.user.locationId) {
+        const [firstLoc] = await db.select({ id: locations.id, name: locations.name }).from(locations).limit(1);
+        if (firstLoc) {
+          session.user.locationId = firstLoc.id as string;
+          if (!session.user.store) {
+            session.user.store = { id: firstLoc.id, name: firstLoc.name };
+          }
+        }
+      }
+
+      if (session.user && !session.user.businessId) {
+        const [firstBiz] = await db.select({ id: businesses.id }).from(businesses).limit(1);
+        session.user.businessId = firstBiz?.id as string;
+      }
+
       return session;
     },
     async jwt({ token, user }) {
-      console.log("=== JWT Callback ===");
-      console.log("User in JWT callback:", user);
-      
       if (user) {
         const customUser = user as any; // Cast to access custom properties
         token.role = customUser.role;
@@ -131,9 +158,13 @@ export const authOptions: NextAuthOptions = {
         token.store = customUser.store;
         token.name = customUser.name;
         token.businessId = customUser.businessId;
-        
-        console.log("Updated token:", { role: token.role, isActive: token.isActive });
       }
+
+      if (!token.businessId) {
+        const [firstBiz] = await db.select({ id: businesses.id }).from(businesses).limit(1);
+        token.businessId = firstBiz?.id as string;
+      }
+
       return token;
     },
     async redirect({ url, baseUrl }) {

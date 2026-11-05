@@ -19,9 +19,18 @@ import {
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { PageHeader } from "@/components/ui/page-header"
 import { StatCard } from "@/components/ui/stat-card"
 import { Badge } from "@/components/ui/badge"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 interface ProductItem {
   id: string
@@ -44,21 +53,84 @@ export default function ProductsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("ALL")
 
+  // Add Product Dialog State
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [newProduct, setNewProduct] = useState({
+    name: "",
+    sku: "",
+    barcode: "",
+    category: "Groceries",
+    price: "",
+    costPrice: "",
+    reorderLevel: "10",
+    description: "",
+  })
+
+  const handleCreateProduct = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newProduct.name.trim() || !newProduct.price) {
+      toast.error("Product name and selling price are required")
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      const sku = newProduct.sku.trim() || `SKU-${Date.now().toString(36).toUpperCase()}`
+      const barcode = newProduct.barcode.trim() || `${Math.floor(100000000000 + Math.random() * 900000000000)}`
+
+      const res = await fetch("/api/admin/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newProduct.name.trim(),
+          sku,
+          barcode,
+          category: newProduct.category || "Groceries",
+          price: parseFloat(newProduct.price),
+          costPrice: newProduct.costPrice ? parseFloat(newProduct.costPrice) : undefined,
+          reorderLevel: parseInt(newProduct.reorderLevel) || 10,
+          description: newProduct.description.trim() || undefined,
+        }),
+      })
+
+      if (!res.ok) {
+        const err = await res.json()
+        toast.error(err.error || "Failed to create product")
+        return
+      }
+
+      toast.success(`Product "${newProduct.name}" registered in catalog!`)
+      setDialogOpen(false)
+      setNewProduct({
+        name: "",
+        sku: "",
+        barcode: "",
+        category: "Groceries",
+        price: "",
+        costPrice: "",
+        reorderLevel: "10",
+        description: "",
+      })
+      fetchProducts()
+    } catch {
+      toast.error("Network error creating product")
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   const fetchProducts = async () => {
     setLoading(true)
     try {
-      const res = await fetch("/api/admin/products")
+      let res = await fetch("/api/admin/products")
+      if (!res.ok) {
+        res = await fetch("/api/products")
+      }
       if (res.ok) {
         const json = await res.json()
-        const list = json.data || json || []
+        const list = Array.isArray(json) ? json : json.data || []
         setProducts(list)
-      } else {
-        // Fallback to with-uom if exists
-        const fallbackRes = await fetch(`/api/products/with-uom?businessId=${businessId || ""}`)
-        if (fallbackRes.ok) {
-          const fb = await fallbackRes.json()
-          setProducts(fb.data || [])
-        }
       }
     } catch (err) {
       console.error("Failed to fetch products:", err)
@@ -123,10 +195,18 @@ export default function ProductsPage() {
               <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${loading ? "animate-spin" : ""}`} />
               Refresh
             </Button>
-            <Button asChild size="sm" className="h-9 bg-[#14532D] hover:bg-[#0f3e22] text-white text-xs font-semibold">
+            <Button
+              size="sm"
+              onClick={() => setDialogOpen(true)}
+              className="h-9 bg-[#14532D] hover:bg-[#0f3e22] text-white text-xs font-semibold shadow-xs"
+            >
+              <Plus className="h-3.5 w-3.5 mr-1.5" />
+              Register New SKU
+            </Button>
+            <Button asChild size="sm" variant="outline" className="h-9 text-xs font-semibold border-slate-300">
               <Link href="/admin/inventory">
                 <Package className="h-3.5 w-3.5 mr-1.5" />
-                View Stock Balances
+                Stock Balances
               </Link>
             </Button>
           </div>
@@ -304,6 +384,173 @@ export default function ProductsPage() {
           )}
         </div>
       </div>
+
+      {/* ───────────────── REGISTER SKU DIALOG ───────────────── */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-md bg-white">
+          <form onSubmit={handleCreateProduct}>
+            <DialogHeader>
+              <DialogTitle className="text-base font-bold text-slate-900">
+                Register New Supermarket SKU
+              </DialogTitle>
+              <DialogDescription className="text-xs text-slate-500">
+                Add a product to the central supermarket catalog. Once registered, stock can be received across any branch.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-3 py-4 text-xs">
+              <div>
+                <Label htmlFor="prod-name" className="text-xs font-semibold text-slate-700">
+                  Product Name *
+                </Label>
+                <Input
+                  id="prod-name"
+                  placeholder="e.g., Highland Whole Milk 1L"
+                  value={newProduct.name}
+                  onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                  className="mt-1 h-9 text-xs"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="prod-sku" className="text-xs font-semibold text-slate-700">
+                    SKU Code (optional)
+                  </Label>
+                  <Input
+                    id="prod-sku"
+                    placeholder="Auto-generated if empty"
+                    value={newProduct.sku}
+                    onChange={(e) => setNewProduct({ ...newProduct, sku: e.target.value })}
+                    className="mt-1 h-9 text-xs font-mono"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="prod-barcode" className="text-xs font-semibold text-slate-700">
+                    Barcode (EAN/UPC)
+                  </Label>
+                  <Input
+                    id="prod-barcode"
+                    placeholder="Auto-generated if empty"
+                    value={newProduct.barcode}
+                    onChange={(e) => setNewProduct({ ...newProduct, barcode: e.target.value })}
+                    className="mt-1 h-9 text-xs font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="prod-cat" className="text-xs font-semibold text-slate-700">
+                    Category
+                  </Label>
+                  <select
+                    id="prod-cat"
+                    value={newProduct.category}
+                    onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
+                    className="mt-1 w-full h-9 px-3 rounded-md border border-slate-300 text-xs text-slate-800 bg-white"
+                  >
+                    <option value="Groceries">Groceries</option>
+                    <option value="Beverages">Beverages</option>
+                    <option value="Bakery">Bakery</option>
+                    <option value="Dairy & Eggs">Dairy & Eggs</option>
+                    <option value="Produce">Produce (Fruits & Veg)</option>
+                    <option value="Meat & Seafood">Meat & Seafood</option>
+                    <option value="Snacks & Confectionery">Snacks & Confectionery</option>
+                    <option value="Household & Cleaning">Household & Cleaning</option>
+                    <option value="Personal Care">Personal Care</option>
+                  </select>
+                </div>
+
+                <div>
+                  <Label htmlFor="prod-reorder" className="text-xs font-semibold text-slate-700">
+                    Reorder Threshold
+                  </Label>
+                  <Input
+                    id="prod-reorder"
+                    type="number"
+                    min="1"
+                    placeholder="10"
+                    value={newProduct.reorderLevel}
+                    onChange={(e) => setNewProduct({ ...newProduct, reorderLevel: e.target.value })}
+                    className="mt-1 h-9 text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="prod-price" className="text-xs font-semibold text-slate-700">
+                    Selling Price ($) *
+                  </Label>
+                  <Input
+                    id="prod-price"
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    placeholder="9.99"
+                    value={newProduct.price}
+                    onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
+                    className="mt-1 h-9 text-xs font-mono"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="prod-cost" className="text-xs font-semibold text-slate-700">
+                    Cost Price ($)
+                  </Label>
+                  <Input
+                    id="prod-cost"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="6.50"
+                    value={newProduct.costPrice}
+                    onChange={(e) => setNewProduct({ ...newProduct, costPrice: e.target.value })}
+                    className="mt-1 h-9 text-xs font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="prod-desc" className="text-xs font-semibold text-slate-700">
+                  Description
+                </Label>
+                <Input
+                  id="prod-desc"
+                  placeholder="Brand, package size, or notes"
+                  value={newProduct.description}
+                  onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                  className="mt-1 h-9 text-xs"
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setDialogOpen(false)}
+                className="h-9 text-xs border-slate-300"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                size="sm"
+                disabled={submitting}
+                className="h-9 bg-[#14532D] hover:bg-[#0f3e22] text-white text-xs font-semibold"
+              >
+                {submitting ? "Registering..." : "Add to Catalog"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
