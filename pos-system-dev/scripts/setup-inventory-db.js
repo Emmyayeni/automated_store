@@ -310,14 +310,14 @@ async function setupDatabase() {
     await client.query(`
       INSERT INTO products (id, business_id, name, sku, category, price, cost_price, reorder_level, is_active)
       VALUES
-        ($1, $9, 'Farm Fresh Whole Milk 1L', 'SKU-DRY-001', 'Dairy & Eggs', 3.49, 2.10, 15, true),
-        ($2, $9, 'Artisan Sourdough Loaf', 'SKU-BKY-002', 'Bakery', 4.99, 2.50, 10, true),
-        ($3, $9, 'Organic Gala Apples (1kg Bag)', 'SKU-PRD-003', 'Produce', 5.99, 3.20, 12, true),
-        ($4, $9, 'Premium Arabica Coffee Beans 500g', 'SKU-BVG-004', 'Beverages', 14.50, 8.00, 8, true),
-        ($5, $9, 'Extra Virgin Olive Oil 750ml', 'SKU-PAN-005', 'Pantry', 12.99, 7.50, 10, true),
-        ($6, $9, 'Whole Grain Brown Rice 2kg', 'SKU-PAN-006', 'Pantry', 6.25, 3.80, 15, true),
-        ($7, $9, 'Sparkling Mineral Water 6-Pack', 'SKU-BVG-007', 'Beverages', 7.99, 4.20, 10, true),
-        ($8, $9, 'Sea Salt Potato Crisps 150g', 'SKU-SNK-008', 'Snacks', 2.99, 1.40, 20, true)
+        ($1, $9, 'Farm Fresh Whole Milk 1L', 'SKU-DRY-001', 'Dairy & Eggs', 2800.00, 2100.00, 15, true),
+        ($2, $9, 'Artisan Sourdough Loaf', 'SKU-BKY-002', 'Bakery', 3200.00, 2200.00, 10, true),
+        ($3, $9, 'Organic Gala Apples (1kg Bag)', 'SKU-PRD-003', 'Produce', 5500.00, 4100.00, 12, true),
+        ($4, $9, 'Premium Arabica Coffee Beans 500g', 'SKU-BVG-004', 'Beverages', 13500.00, 9800.00, 8, true),
+        ($5, $9, 'Extra Virgin Olive Oil 750ml', 'SKU-PAN-005', 'Pantry', 18500.00, 13800.00, 10, true),
+        ($6, $9, 'Whole Grain Brown Rice 2kg', 'SKU-PAN-006', 'Pantry', 7500.00, 5400.00, 15, true),
+        ($7, $9, 'Sparkling Mineral Water 6-Pack', 'SKU-BVG-007', 'Beverages', 3600.00, 2500.00, 10, true),
+        ($8, $9, 'Sea Salt Potato Crisps 150g', 'SKU-SNK-008', 'Snacks', 2000.00, 1350.00, 20, true)
     `, [p1, p2, p3, p4, p5, p6, p7, p8, businessId]);
 
     // 5. Initial Inventory Stock

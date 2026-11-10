@@ -273,7 +273,7 @@ export default function CashierInventoryPage() {
                           {item.category}
                         </td>
                         <td className="py-2.5 px-4 text-right font-extrabold text-[#14532D]">
-                          ${item.price.toFixed(2)}
+                          ₦{item.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
                         <td className="py-2.5 px-4 text-center">
                           <span

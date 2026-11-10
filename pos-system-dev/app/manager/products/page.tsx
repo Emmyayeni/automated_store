@@ -342,25 +342,25 @@ export default function ProductsPage() {
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="price">Price ($)</Label>
+                    <Label htmlFor="price">Price (₦)</Label>
                     <Input
                       id="price"
                       type="number"
-                      step="0.01"
+                      step="50"
                       value={newProduct.price}
                       onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
-                      placeholder="12.99"
+                      placeholder="3500"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="cost">Cost ($)</Label>
+                    <Label htmlFor="cost">Cost (₦)</Label>
                     <Input
                       id="cost"
                       type="number"
-                      step="0.01"
+                      step="50"
                       value={newProduct.cost}
                       onChange={(e) => setNewProduct({ ...newProduct, cost: e.target.value })}
-                      placeholder="8.50"
+                      placeholder="2400"
                     />
                   </div>
                   <div className="space-y-2">
@@ -448,21 +448,21 @@ export default function ProductsPage() {
                   </div>
                   <div className="grid grid-cols-3 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="edit-price">Price ($)</Label>
+                      <Label htmlFor="edit-price">Price (₦)</Label>
                       <Input
                         id="edit-price"
                         type="number"
-                        step="0.01"
+                        step="50"
                         value={editProduct.price}
                         onChange={e => setEditProduct({ ...editProduct, price: e.target.value })}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="edit-cost">Cost ($)</Label>
+                      <Label htmlFor="edit-cost">Cost (₦)</Label>
                       <Input
                         id="edit-cost"
                         type="number"
-                        step="0.01"
+                        step="50"
                         value={editProduct.cost}
                         onChange={e => setEditProduct({ ...editProduct, cost: e.target.value })}
                       />
@@ -552,7 +552,7 @@ export default function ProductsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              ${products.reduce((sum, p) => sum + p.price * p.stock, 0).toLocaleString()}
+              ₦{products.reduce((sum, p) => sum + p.price * p.stock, 0).toLocaleString()}
             </div>
           </CardContent>
         </Card>
@@ -620,7 +620,7 @@ export default function ProductsPage() {
                   </TableCell>
                   <TableCell className="font-mono">{product.sku}</TableCell>
                   <TableCell>{product.category}</TableCell>
-                  <TableCell className="font-medium font-mono">${Number(product.price || 0).toFixed(2)}</TableCell>
+                  <TableCell className="font-medium font-mono">₦{Number(product.price || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                   <TableCell>
                     <Badge variant={product.stock < 20 ? "destructive" : "default"}>{product.stock}</Badge>
                   </TableCell>

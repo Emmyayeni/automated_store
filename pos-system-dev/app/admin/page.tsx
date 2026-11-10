@@ -214,11 +214,11 @@ export default function AdminDashboard() {
           title="Total Valuation"
           value={
             summary.totalValuation
-              ? `$${Number(summary.totalValuation).toLocaleString(undefined, {
+              ? `₦${Number(summary.totalValuation).toLocaleString(undefined, {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
                 })}`
-              : "$0.00"
+              : "₦0.00"
           }
           subtitle="Consolidated asset value"
           icon={TrendingUp}

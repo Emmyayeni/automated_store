@@ -255,10 +255,10 @@ export default function ProductsPage() {
           title="Average Unit Price"
           value={
             products.length > 0
-              ? `$${(
+              ? `₦${(
                   products.reduce((acc, p) => acc + (Number(p.price) || 0), 0) / products.length
-                ).toFixed(2)}`
-              : "$0.00"
+                ).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              : "₦0.00"
           }
           subtitle="Across catalog inventory"
           icon={TrendingUp}
@@ -340,7 +340,7 @@ export default function ProductsPage() {
                       </span>
                     </td>
                     <td className="py-3 px-4 text-right font-mono font-bold text-slate-900">
-                      ${Number(p.price || 0).toFixed(2)}
+                      ₦{Number(p.price || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td className="py-3 px-4">
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
@@ -389,7 +389,7 @@ export default function ProductsPage() {
                     <span className="text-[11px] text-slate-500">{p.category || "General"}</span>
                   </div>
                   <span className="font-mono font-bold text-xs text-slate-900">
-                    ${Number(p.price || 0).toFixed(2)}
+                    ₦{Number(p.price || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
 
@@ -499,14 +499,14 @@ export default function ProductsPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label htmlFor="prod-price" className="text-xs font-semibold text-slate-700">
-                    Selling Price ($) *
+                    Selling Price (₦) *
                   </Label>
                   <Input
                     id="prod-price"
                     type="number"
-                    step="0.01"
-                    min="0.01"
-                    placeholder="9.99"
+                    step="1"
+                    min="1"
+                    placeholder="2500"
                     value={newProduct.price}
                     onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
                     className="mt-1 h-9 text-xs font-mono"
@@ -516,14 +516,14 @@ export default function ProductsPage() {
 
                 <div>
                   <Label htmlFor="prod-cost" className="text-xs font-semibold text-slate-700">
-                    Cost Price ($)
+                    Cost Price (₦)
                   </Label>
                   <Input
                     id="prod-cost"
                     type="number"
-                    step="0.01"
+                    step="1"
                     min="0"
-                    placeholder="6.50"
+                    placeholder="1800"
                     value={newProduct.costPrice}
                     onChange={(e) => setNewProduct({ ...newProduct, costPrice: e.target.value })}
                     className="mt-1 h-9 text-xs font-mono"

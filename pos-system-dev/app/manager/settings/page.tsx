@@ -602,28 +602,28 @@ export default function ManagerSettingsPage() {
 
                   <div className="space-y-1.5">
                     <Label htmlFor="opening-float" className="text-xs font-semibold text-slate-700">
-                      Standard Opening Shift Float ($)
+                      Standard Opening Shift Float (₦)
                     </Label>
                     <Input
                       id="opening-float"
                       value={storeSettings.cashDrawerStart}
                       onChange={(e) => setStoreSettings({ ...storeSettings, cashDrawerStart: e.target.value })}
                       className="h-9 text-xs font-mono"
-                      placeholder="200.00"
+                      placeholder="25000.00"
                     />
                     <p className="text-[11px] text-slate-500">Default starting cash float pre-filled when cashiers open their shift.</p>
                   </div>
 
                   <div className="space-y-1.5">
                     <Label htmlFor="max-cash" className="text-xs font-semibold text-slate-700">
-                      Maximum Drawer Cash Limit ($)
+                      Maximum Drawer Cash Limit (₦)
                     </Label>
                     <Input
                       id="max-cash"
                       value={paymentTenders.maxCashDrawerLimit}
                       onChange={(e) => setPaymentTenders({ ...paymentTenders, maxCashDrawerLimit: e.target.value })}
                       className="h-9 text-xs font-mono"
-                      placeholder="1500.00"
+                      placeholder="250000.00"
                     />
                     <p className="text-[11px] text-slate-500">Prompts cashiers to perform a safe drop when drawer cash exceeds this amount.</p>
                   </div>
@@ -631,7 +631,7 @@ export default function ManagerSettingsPage() {
                   <div className="flex items-center justify-between p-3 border border-amber-200 bg-amber-50/50 rounded-lg mt-2">
                     <div className="space-y-0.5">
                       <span className="text-xs font-semibold text-amber-900">Manager Override on Item Voids</span>
-                      <p className="text-[11px] text-amber-700">Require supervisor PIN when voiding scanned products over $20.</p>
+                      <p className="text-[11px] text-amber-700">Require supervisor PIN when voiding scanned products over ₦10,000.</p>
                     </div>
                     <Switch
                       checked={paymentTenders.requireManagerOverrideOnVoid}

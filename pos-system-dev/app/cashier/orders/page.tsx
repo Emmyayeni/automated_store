@@ -133,7 +133,7 @@ export default function CashierOrdersPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Terminal Total Sales"
-          value={`$${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          value={`₦${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           subtitle="Lifetime register intake"
           icon={TrendingUp}
           iconColor="text-emerald-700"
@@ -159,8 +159,8 @@ export default function CashierOrdersPage() {
           title="Average Basket Size"
           value={
             transactions.length > 0
-              ? `$${(totalRevenue / transactions.length).toFixed(2)}`
-              : "$0.00"
+              ? `₦${(totalRevenue / transactions.length).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              : "₦0.00"
           }
           subtitle="Avg sale per customer"
           icon={DollarSign}
@@ -232,7 +232,7 @@ export default function CashierOrdersPage() {
                         </span>
                       </td>
                       <td className="py-2.5 px-4 text-right font-extrabold text-[#14532D]">
-                        ${t.total.toFixed(2)}
+                        ₦{t.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                       <td className="py-2.5 px-4 text-center">
                         <Badge className="bg-emerald-100 text-emerald-800 border-none text-[10px]">
@@ -295,15 +295,15 @@ export default function CashierOrdersPage() {
               <div className="py-2 space-y-1 text-[11px]">
                 <div className="flex justify-between">
                   <span>Items Total ({selectedTxn.items} units):</span>
-                  <span>${(selectedTxn.total * 0.92).toFixed(2)}</span>
+                  <span>₦{(selectedTxn.total * 0.92).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Sales Tax (8%):</span>
-                  <span>${(selectedTxn.total * 0.08).toFixed(2)}</span>
+                  <span>₦{(selectedTxn.total * 0.08).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between font-bold text-sm text-slate-900 pt-1 border-t border-slate-200">
                   <span>TOTAL PAID:</span>
-                  <span>${selectedTxn.total.toFixed(2)}</span>
+                  <span>₦{selectedTxn.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
               </div>
 

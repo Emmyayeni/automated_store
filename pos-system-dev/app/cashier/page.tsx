@@ -270,7 +270,7 @@ export default function CashierDashboardPage() {
     addToCart(randomProduct)
     toast({
       title: "⚡ Barcode Scanned (Beep!)",
-      description: `Added 1x ${randomProduct.name} to cart ($${randomProduct.price.toFixed(2)}).`,
+      description: `Added 1x ${randomProduct.name} to cart (₦${randomProduct.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}).`,
     })
   }
 
@@ -526,11 +526,11 @@ export default function CashierDashboardPage() {
           title="Today's Register Intake"
           value={
             todaySalesSum > 0
-              ? `$${todaySalesSum.toLocaleString(undefined, {
+              ? `₦${todaySalesSum.toLocaleString(undefined, {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
                 })}`
-              : "$342.80"
+              : "₦0.00"
           }
           subtitle="Processed at this terminal"
           icon={TrendingUp}
@@ -687,7 +687,7 @@ export default function CashierDashboardPage() {
 
                         <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-100">
                           <span className="text-sm font-extrabold text-[#14532D]">
-                            ${product.price.toFixed(2)}
+                            ₦{product.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
                           <Button
                             size="sm"
@@ -751,7 +751,7 @@ export default function CashierDashboardPage() {
                       <div className="min-w-0 flex-1 pr-2">
                         <p className="font-bold text-slate-900 truncate">{item.name}</p>
                         <p className="text-[11px] text-slate-500 font-medium">
-                          ${item.price.toFixed(2)} each
+                          ₦{item.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} each
                         </p>
                       </div>
 
@@ -785,8 +785,8 @@ export default function CashierDashboardPage() {
                         </Button>
                       </div>
 
-                      <div className="w-16 text-right font-extrabold text-slate-900 shrink-0">
-                        ${(item.price * item.quantity).toFixed(2)}
+                      <div className="w-24 text-right font-extrabold text-slate-900 shrink-0">
+                        ₦{(item.price * item.quantity).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </div>
                     </div>
                   ))
@@ -800,17 +800,21 @@ export default function CashierDashboardPage() {
                   <div className="space-y-1.5 text-xs text-slate-600">
                     <div className="flex justify-between">
                       <span>Subtotal</span>
-                      <span className="font-semibold text-slate-900">${cartSubtotal.toFixed(2)}</span>
+                      <span className="font-semibold text-slate-900">
+                        ₦{cartSubtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span>Sales Tax ({(taxRate * 100).toFixed(0)}%)</span>
-                      <span className="font-semibold text-slate-900">${cartTax.toFixed(2)}</span>
+                      <span className="font-semibold text-slate-900">
+                        ₦{cartTax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
                     </div>
                     <Separator className="bg-slate-200 my-2" />
                     <div className="flex justify-between items-baseline pt-1">
                       <span className="text-sm font-bold text-slate-900">Total Payable</span>
                       <span className="text-xl font-black text-[#14532D]">
-                        ${cartTotal.toFixed(2)}
+                        ₦{cartTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     </div>
                   </div>
@@ -906,7 +910,7 @@ export default function CashierDashboardPage() {
                         </span>
                       </td>
                       <td className="py-2.5 px-4 text-right font-extrabold text-[#14532D]">
-                        ${tx.totalAmount.toFixed(2)}
+                        ₦{tx.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                       <td className="py-2.5 px-4 text-center">
                         <Badge className="bg-emerald-100 text-emerald-800 border-none text-[10px]">
@@ -953,16 +957,16 @@ export default function CashierDashboardPage() {
             <div className="p-3.5 rounded-lg bg-emerald-50/70 border border-emerald-200 text-center">
               <span className="text-xs font-semibold text-emerald-900 block">Total Due</span>
               <span className="text-2xl font-black text-[#14532D] block mt-0.5">
-                ${cartTotal.toFixed(2)}
+                ₦{cartTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </div>
 
             {selectedPaymentMethod === "cash" && (
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-700">Cash Amount Tendered ($)</label>
+                <label className="text-xs font-bold text-slate-700">Cash Amount Tendered (₦)</label>
                 <Input
                   type="number"
-                  step="0.01"
+                  step="50"
                   value={cashTendered}
                   onChange={(e) => setCashTendered(e.target.value)}
                   className="font-mono text-base font-bold text-slate-900"
@@ -972,9 +976,9 @@ export default function CashierDashboardPage() {
                 <div className="grid grid-cols-4 gap-1.5 pt-1">
                   {[
                     Math.ceil(cartTotal),
-                    Math.ceil(cartTotal / 10) * 10 || 10,
-                    20,
-                    50,
+                    Math.ceil(cartTotal / 1000) * 1000 || 5000,
+                    10000,
+                    20000,
                   ].map((preset, idx) => (
                     <Button
                       key={idx}
@@ -984,7 +988,7 @@ export default function CashierDashboardPage() {
                       onClick={() => setCashTendered(preset.toFixed(2))}
                       className="text-xs font-bold border-slate-300"
                     >
-                      ${preset}
+                      ₦{preset.toLocaleString()}
                     </Button>
                   ))}
                 </div>
@@ -993,7 +997,7 @@ export default function CashierDashboardPage() {
                   <div className="p-2.5 rounded-md bg-slate-100 flex justify-between items-center text-xs">
                     <span className="font-semibold text-slate-700">Change Due to Customer:</span>
                     <span className="font-black text-emerald-700 text-sm">
-                      ${(parseFloat(cashTendered) - cartTotal).toFixed(2)}
+                      ₦{(parseFloat(cashTendered) - cartTotal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
                 )}
@@ -1005,7 +1009,7 @@ export default function CashierDashboardPage() {
                 <CreditCard className="h-6 w-6 mx-auto text-slate-600" />
                 <p className="text-xs font-semibold text-slate-800">Terminal Ready</p>
                 <p className="text-[11px] text-slate-500">
-                  Tap or insert card on POS Pinpad for ${cartTotal.toFixed(2)}
+                  Tap or insert card on POS Pinpad for ₦{cartTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
               </div>
             )}
@@ -1015,7 +1019,7 @@ export default function CashierDashboardPage() {
                 <Smartphone className="h-6 w-6 mx-auto text-emerald-700" />
                 <p className="text-xs font-semibold text-slate-800">Bank Transfer / QR Pay</p>
                 <p className="text-[11px] text-slate-500">
-                  Confirm alert notification for ${cartTotal.toFixed(2)}
+                  Confirm alert notification for ₦{cartTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
               </div>
             )}
@@ -1085,7 +1089,7 @@ export default function CashierDashboardPage() {
                       <span className="truncate flex-1 pr-2">
                         {item.name} x{item.quantity}
                       </span>
-                      <span>${(item.price * item.quantity).toFixed(2)}</span>
+                      <span>₦{(item.price * item.quantity).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                   ))}
                 </div>
@@ -1094,25 +1098,25 @@ export default function CashierDashboardPage() {
               <div className="border-t border-dashed border-slate-300 pt-2 space-y-1 text-[11px]">
                 <div className="flex justify-between">
                   <span>Subtotal:</span>
-                  <span>${activeReceipt.subtotal.toFixed(2)}</span>
+                  <span>₦{activeReceipt.subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Tax (8%):</span>
-                  <span>${activeReceipt.taxAmount.toFixed(2)}</span>
+                  <span>Sales Tax (8%):</span>
+                  <span>₦{activeReceipt.taxAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between font-bold text-sm text-slate-900 pt-1 border-t border-slate-200">
                   <span>TOTAL:</span>
-                  <span>${activeReceipt.totalAmount.toFixed(2)}</span>
+                  <span>₦{activeReceipt.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 {activeReceipt.cashTendered && activeReceipt.paymentMethod === "cash" && (
                   <>
                     <div className="flex justify-between text-[10px] text-slate-500">
                       <span>Tendered:</span>
-                      <span>${activeReceipt.cashTendered.toFixed(2)}</span>
+                      <span>₦{activeReceipt.cashTendered.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                     <div className="flex justify-between text-[10px] font-bold text-emerald-800">
                       <span>Change:</span>
-                      <span>${(activeReceipt.changeDue || 0).toFixed(2)}</span>
+                      <span>₦{(activeReceipt.changeDue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                   </>
                 )}

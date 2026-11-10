@@ -226,7 +226,7 @@ export default function ManagerReportsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Gross Revenue"
-          value={`$${totalRev.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          value={`₦${totalRev.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           subtitle="All completed transactions"
           icon={DollarSign}
           iconColor="text-emerald-700"
@@ -240,14 +240,14 @@ export default function ManagerReportsPage() {
         />
         <StatCard
           title="Average Basket Size"
-          value={`$${avgTicket.toFixed(2)}`}
+          value={`₦${avgTicket.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           subtitle="Average revenue per ticket"
           icon={TrendingUp}
           iconColor="text-purple-600"
         />
         <StatCard
           title="Tax Collected"
-          value={`$${totalTax.toFixed(2)}`}
+          value={`₦${totalTax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           subtitle="Recorded sales tax liability"
           icon={BarChart3}
           iconColor="text-amber-600"
@@ -304,10 +304,10 @@ export default function ManagerReportsPage() {
                         </div>
                         <div className="text-right">
                           <p className="font-bold text-slate-900 font-mono text-sm">
-                            ${Number(day.totalSales || 0).toFixed(2)}
+                            ₦{Number(day.totalSales || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </p>
                           <p className="text-[10px] text-slate-500 font-mono">
-                            Avg: ${Number(day.averageSale || 0).toFixed(2)}
+                            Avg: ₦{Number(day.averageSale || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </p>
                         </div>
                       </div>

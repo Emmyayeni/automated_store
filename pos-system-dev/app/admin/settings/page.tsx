@@ -63,8 +63,8 @@ export default function SettingsPage() {
             email: data.email || "",
             website: data.website || "",
             taxRate: data.taxRate || "",
-            currency: data.currency || "USD",
-            timezone: data.timezone || "America/New_York",
+            currency: data.currency || "NGN",
+            timezone: data.timezone || "Africa/Lagos",
           }))
         }
       })
@@ -256,6 +256,7 @@ export default function SettingsPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="NGN">NGN (₦)</SelectItem>
                   <SelectItem value="USD">USD ($)</SelectItem>
                   <SelectItem value="EUR">EUR (€)</SelectItem>
                   <SelectItem value="GBP">GBP (£)</SelectItem>

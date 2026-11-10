@@ -146,11 +146,11 @@ export default function ManagerDashboard() {
           title="Branch Inventory Value"
           value={
             summary.totalValuation
-              ? `$${Number(summary.totalValuation).toLocaleString(undefined, {
+              ? `₦${Number(summary.totalValuation).toLocaleString(undefined, {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
                 })}`
-              : "$0.00"
+              : "₦0.00"
           }
           subtitle="Local holding valuation"
           icon={TrendingUp}

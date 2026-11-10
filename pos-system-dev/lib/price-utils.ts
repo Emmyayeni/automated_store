@@ -24,11 +24,11 @@ export interface BusinessCurrencySettings {
   decimalSeparator: string;
 }
 
-// Default settings for supermarket retail currency
+// Default settings for supermarket retail currency (Nigerian Naira)
 const DEFAULT_CURRENCY_SETTINGS: BusinessCurrencySettings = {
-  currency: 'USD',
-  locale: 'en-US',
-  symbol: '$',
+  currency: 'NGN',
+  locale: 'en-NG',
+  symbol: '₦',
   position: 'before',
   decimalPlaces: 2,
   thousandsSeparator: ',',

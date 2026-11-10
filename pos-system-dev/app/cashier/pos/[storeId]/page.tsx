@@ -717,7 +717,7 @@ export default function StorePOSPage() {
 
                       <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-100">
                         <span className="text-sm font-black text-[#14532D]">
-                          ${product.price.toFixed(2)}
+                          ₦{product.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                         <div
                           className={`h-7 w-7 rounded-lg flex items-center justify-center transition-colors ${
@@ -798,7 +798,7 @@ export default function StorePOSPage() {
                       {item.name}
                     </p>
                     <p className="text-[11px] text-slate-500 font-semibold mt-0.5">
-                      ${item.price.toFixed(2)} each
+                      ₦{item.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} each
                     </p>
                   </div>
 
@@ -834,8 +834,8 @@ export default function StorePOSPage() {
                   </div>
 
                   {/* Line Total */}
-                  <div className="w-16 text-right font-black text-slate-900 text-sm shrink-0">
-                    ${(item.price * item.quantity).toFixed(2)}
+                  <div className="w-24 text-right font-black text-slate-900 text-sm shrink-0">
+                    ₦{(item.price * item.quantity).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                 </div>
               ))
@@ -848,17 +848,21 @@ export default function StorePOSPage() {
             <div className="space-y-1.5 text-xs text-slate-600">
               <div className="flex justify-between">
                 <span>Subtotal</span>
-                <span className="font-semibold text-slate-900">${subtotal.toFixed(2)}</span>
+                <span className="font-semibold text-slate-900">
+                  ₦{subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Sales Tax ({(taxRate * 100).toFixed(0)}%)</span>
-                <span className="font-semibold text-slate-900">${taxAmount.toFixed(2)}</span>
+                <span className="font-semibold text-slate-900">
+                  ₦{taxAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
               </div>
               <Separator className="bg-slate-200 my-1" />
               <div className="flex justify-between items-baseline pt-1">
                 <span className="text-sm font-extrabold text-slate-900">Total Payable</span>
                 <span className="text-2xl font-black text-[#14532D]">
-                  ${totalAmount.toFixed(2)}
+                  ₦{totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
             </div>
@@ -915,31 +919,31 @@ export default function StorePOSPage() {
             <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-center">
               <span className="text-xs font-bold text-emerald-900 block">Total Due</span>
               <span className="text-3xl font-black text-[#14532D] block mt-0.5">
-                ${totalAmount.toFixed(2)}
+                ₦{totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </div>
 
             {tenderMethod === "cash" && (
               <div className="space-y-3">
                 <label className="text-xs font-extrabold text-slate-800">
-                  Cash Amount Tendered ($)
+                  Cash Amount Tendered (₦)
                 </label>
                 <Input
                   type="number"
-                  step="0.01"
+                  step="50"
                   value={cashTendered}
                   onChange={(e) => setCashTendered(e.target.value)}
                   className="font-mono text-lg font-black text-slate-900 h-11"
                   autoFocus
                 />
 
-                {/* Preset Cash Bills */}
+                {/* Preset Cash Bills (Naira) */}
                 <div className="grid grid-cols-4 gap-2">
                   {[
                     Math.ceil(totalAmount),
-                    Math.ceil(totalAmount / 10) * 10 || 10,
-                    20,
-                    50,
+                    Math.ceil(totalAmount / 1000) * 1000 || 5000,
+                    10000,
+                    20000,
                   ].map((preset, idx) => (
                     <Button
                       key={idx}
@@ -949,7 +953,7 @@ export default function StorePOSPage() {
                       onClick={() => setCashTendered(preset.toFixed(2))}
                       className="text-xs font-extrabold border-slate-300 h-9"
                     >
-                      ${preset}
+                      ₦{preset.toLocaleString()}
                     </Button>
                   ))}
                 </div>
@@ -958,7 +962,7 @@ export default function StorePOSPage() {
                   <div className="p-3 rounded-lg bg-emerald-100/70 border border-emerald-300 flex justify-between items-center text-xs">
                     <span className="font-extrabold text-emerald-900">Change Due to Customer:</span>
                     <span className="font-black text-emerald-800 text-base">
-                      ${(parseFloat(cashTendered) - totalAmount).toFixed(2)}
+                      ₦{(parseFloat(cashTendered) - totalAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
                 )}
@@ -970,7 +974,7 @@ export default function StorePOSPage() {
                 <CreditCard className="h-8 w-8 mx-auto text-slate-600 animate-pulse" />
                 <p className="text-sm font-extrabold text-slate-800">Pinpad Terminal Ready</p>
                 <p className="text-xs text-slate-500">
-                  Tap, insert, or swipe card for ${totalAmount.toFixed(2)}
+                  Tap, insert, or swipe card for ₦{totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
               </div>
             )}
@@ -980,7 +984,7 @@ export default function StorePOSPage() {
                 <Smartphone className="h-8 w-8 mx-auto text-emerald-700" />
                 <p className="text-sm font-extrabold text-slate-800">Bank Transfer / QR Pay</p>
                 <p className="text-xs text-slate-500">
-                  Verify notification credit of ${totalAmount.toFixed(2)}
+                  Verify notification credit of ₦{totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
               </div>
             )}
@@ -1100,7 +1104,7 @@ export default function StorePOSPage() {
                     <span className="truncate flex-1 pr-2">
                       {item.name} x{item.quantity}
                     </span>
-                    <span>${(item.price * item.quantity).toFixed(2)}</span>
+                    <span>₦{(item.price * item.quantity).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                 ))}
               </div>
@@ -1108,25 +1112,25 @@ export default function StorePOSPage() {
               <div className="border-t border-dashed border-slate-300 pt-2 space-y-1 text-[11px]">
                 <div className="flex justify-between">
                   <span>Subtotal:</span>
-                  <span>${activeReceipt.subtotal.toFixed(2)}</span>
+                  <span>₦{activeReceipt.subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Sales Tax (8%):</span>
-                  <span>${activeReceipt.taxAmount.toFixed(2)}</span>
+                  <span>₦{activeReceipt.taxAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between font-bold text-sm text-slate-900 pt-1 border-t border-slate-200">
                   <span>TOTAL:</span>
-                  <span>${activeReceipt.totalAmount.toFixed(2)}</span>
+                  <span>₦{activeReceipt.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 {activeReceipt.cashTendered && activeReceipt.paymentMethod === "cash" && (
                   <>
                     <div className="flex justify-between text-[10px] text-slate-500">
                       <span>Tendered:</span>
-                      <span>${activeReceipt.cashTendered.toFixed(2)}</span>
+                      <span>₦{activeReceipt.cashTendered.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                     <div className="flex justify-between text-[10px] font-bold text-emerald-800">
                       <span>Change:</span>
-                      <span>${(activeReceipt.changeDue || 0).toFixed(2)}</span>
+                      <span>₦{(activeReceipt.changeDue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                   </>
                 )}
