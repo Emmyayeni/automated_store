@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { inventory, inventoryAdjustmentLogs, users, locations, products, inventoryByUom, productUoms, unitsOfMeasure } from "@/lib/schema";
+import { inventory, inventoryAdjustmentLogs, stockMovements, users, locations, products, inventoryByUom, productUoms, unitsOfMeasure } from "@/lib/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { convertProductQuantity, getProductBaseUOM, updateInventoryUOM } from "./uom-utils";
 
@@ -140,6 +140,33 @@ export async function adjustInventoryWithLog(input: InventoryAdjustmentInput) {
     })
     .returning();
 
+  // Also log into central stock movements ledger
+  try {
+    const reasonNormalized =
+      reason?.toUpperCase().includes("DAMAGE")
+        ? "DAMAGED"
+        : reason?.toUpperCase().includes("EXPIRE")
+        ? "EXPIRED"
+        : reason?.toUpperCase().includes("SALE")
+        ? "SALE"
+        : "ADJUSTMENT";
+
+    await db.insert(stockMovements).values({
+      locationId,
+      productId,
+      userId: adjustedBy,
+      movementType: "ADJUSTMENT",
+      quantity: Math.abs(baseUnitAdjustment),
+      balanceBefore: previousQuantity,
+      balanceAfter: newQuantity,
+      reason: reasonNormalized as any,
+      reference: referenceId || "MANUAL_ADJUSTMENT",
+      notes: notes || reason || "Inventory balance correction",
+    });
+  } catch (movErr) {
+    console.warn("Could not log to stockMovements:", movErr);
+  }
+
   return {
     inventory: updatedInventory,
     log: adjustmentLog,
@@ -216,8 +243,8 @@ export async function getInventoryAdjustmentHistory(
  */
 export function canAdjustInventory(userRole: string): boolean {
   // Convert to lowercase to match our role definitions
-  const normalizedRole = userRole.toLowerCase();
-  return ['admin', 'manager'].includes(normalizedRole);
+  const normalizedRole = userRole?.toLowerCase() || "";
+  return ['admin', 'manager', 'branch_manager'].includes(normalizedRole);
 }
 
 /**

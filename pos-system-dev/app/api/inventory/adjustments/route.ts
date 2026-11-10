@@ -190,7 +190,8 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // For managers, verify they can only adjust inventory in their assigned location
-    if (session.user.role === 'MANAGER') {
+    const upperRole = (session.user.role || "").toUpperCase();
+    if (upperRole === 'MANAGER' || upperRole === 'BRANCH_MANAGER') {
       if (!session.user.locationId) {
         return NextResponse.json(
           { error: "Manager must be assigned to a location to adjust inventory." },
@@ -294,7 +295,8 @@ export async function PUT(request: NextRequest) {
     }
 
     // For managers, verify all adjustments are for their assigned location
-    if (session.user.role === 'MANAGER') {
+    const upperRole = (session.user.role || "").toUpperCase();
+    if (upperRole === 'MANAGER' || upperRole === 'BRANCH_MANAGER') {
       if (!session.user.locationId) {
         return NextResponse.json(
           { error: "Manager must be assigned to a location to adjust inventory." },

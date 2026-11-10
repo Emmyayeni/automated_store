@@ -27,14 +27,14 @@ export const isValidRole = (role: string): role is Role => {
 // ---- Dashboard routing ----
 export const ROLE_DASHBOARD_PATH: Record<string, string> = {
   ADMIN:          "/admin",
-  BRANCH_MANAGER: "/admin",     // Managers use the admin inventory suite scoped to their branch
-  MANAGER:        "/admin",
-  CLERK:          "/admin/stock-in", // Clerks land directly on operational stock-in
+  BRANCH_MANAGER: "/manager",
+  MANAGER:        "/manager",
+  CLERK:          "/admin/stock-in",
   CASHIER:        "/cashier",
   // lowercase fallbacks
   admin:          "/admin",
-  branch_manager: "/admin",
-  manager:        "/admin",
+  branch_manager: "/manager",
+  manager:        "/manager",
   clerk:          "/admin/stock-in",
   cashier:        "/cashier",
 };

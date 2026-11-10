@@ -21,7 +21,10 @@ import {
   Menu,
   X,
   LogOut,
-  Store
+  Store,
+  Tags,
+  History,
+  TrendingUp
 } from "lucide-react"
 import { RoleBadge } from "@/components/ui/status-badge"
 
@@ -46,17 +49,20 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
       ? [{ name: "Branch Dashboard", href: "/manager", icon: LayoutDashboard, group: "Overview" }]
       : []),
     // Inventory
-    { name: "Products", href: "/manager/products", icon: Package, group: "Inventory" },
+    { name: "Products", href: "/admin/products", icon: Package, group: "Inventory" },
+    ...(!isClerk ? [{ name: "Categories", href: "/admin/categories", icon: Tags, group: "Inventory" }] : []),
     { name: "Stock Balances", href: "/admin/inventory", icon: Layers, group: "Inventory" },
     { name: "Stock-In (Receive)", href: "/admin/stock-in", icon: ArrowDownToLine, group: "Inventory" },
     { name: "Stock-Out (Deduct)", href: "/admin/stock-out", icon: ArrowUpFromLine, group: "Inventory" },
+    { name: "Stock Movements", href: "/admin/stock-movements", icon: History, group: "Inventory" },
     // Operations
     { name: "Stock Transfers", href: "/admin/transfers", icon: ArrowLeftRight, group: "Operations" },
     { name: "Low Stock Alerts", href: "/admin/low-stock", icon: AlertTriangle, group: "Operations" },
     // Management (Managers only)
     ...(!isClerk
       ? [
-          { name: "Branch Reports", href: "/admin/reports", icon: BarChart3, group: "Management" },
+          { name: "Sales Reports", href: "/manager/reports", icon: TrendingUp, group: "Management" },
+          { name: "Stock Valuation", href: "/admin/reports", icon: BarChart3, group: "Management" },
           { name: "Staff & Team", href: "/manager/staff", icon: Users, group: "Management" },
           { name: "Settings", href: "/manager/settings", icon: Settings, group: "Management" },
         ]

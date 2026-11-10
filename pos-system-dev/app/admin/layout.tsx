@@ -26,7 +26,10 @@ import {
   Shield,
   CreditCard,
   Building2,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Tags,
+  History,
+  ShieldAlert
 } from "lucide-react"
 import { RoleBadge } from "@/components/ui/status-badge"
 
@@ -75,6 +78,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       roles: ["ADMIN", "BRANCH_MANAGER", "MANAGER"],
     },
     {
+      name: "Categories",
+      href: "/admin/categories",
+      icon: Tags,
+      group: "inventory",
+      roles: ["ADMIN", "BRANCH_MANAGER", "MANAGER"],
+    },
+    {
       name: "Stock Balances",
       href: "/admin/inventory",
       icon: Layers,
@@ -92,6 +102,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       name: "Stock-Out (Deduct)",
       href: "/admin/stock-out",
       icon: ArrowUpFromLine,
+      group: "inventory",
+      roles: ["ADMIN", "BRANCH_MANAGER", "MANAGER", "CLERK"],
+    },
+    {
+      name: "Stock Movements",
+      href: "/admin/stock-movements",
+      icon: History,
       group: "inventory",
       roles: ["ADMIN", "BRANCH_MANAGER", "MANAGER", "CLERK"],
     },
@@ -138,6 +155,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       icon: Users,
       group: "management",
       roles: ["ADMIN", "BRANCH_MANAGER", "MANAGER"],
+    },
+    {
+      name: "Audit Logs",
+      href: "/admin/audit-logs",
+      icon: ShieldAlert,
+      group: "management",
+      roles: ["ADMIN"],
     },
     {
       name: "System Settings",

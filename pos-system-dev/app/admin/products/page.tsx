@@ -52,6 +52,17 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("ALL")
+  const [availableCategories, setAvailableCategories] = useState<string[]>([
+    "Groceries",
+    "Beverages",
+    "Bakery",
+    "Dairy & Eggs",
+    "Produce",
+    "Meat & Seafood",
+    "Snacks & Confectionery",
+    "Household & Cleaning",
+    "Personal Care",
+  ])
 
   // Add Product Dialog State
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -141,6 +152,15 @@ export default function ProductsPage() {
 
   useEffect(() => {
     fetchProducts()
+    fetch("/api/categories")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          const names = data.map((c: any) => c.name)
+          setAvailableCategories((prev) => Array.from(new Set([...prev, ...names])))
+        }
+      })
+      .catch(() => {})
   }, [])
 
   const categories = Array.from(
@@ -452,15 +472,11 @@ export default function ProductsPage() {
                     onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
                     className="mt-1 w-full h-9 px-3 rounded-md border border-slate-300 text-xs text-slate-800 bg-white"
                   >
-                    <option value="Groceries">Groceries</option>
-                    <option value="Beverages">Beverages</option>
-                    <option value="Bakery">Bakery</option>
-                    <option value="Dairy & Eggs">Dairy & Eggs</option>
-                    <option value="Produce">Produce (Fruits & Veg)</option>
-                    <option value="Meat & Seafood">Meat & Seafood</option>
-                    <option value="Snacks & Confectionery">Snacks & Confectionery</option>
-                    <option value="Household & Cleaning">Household & Cleaning</option>
-                    <option value="Personal Care">Personal Care</option>
+                    {availableCategories.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
                   </select>
                 </div>
 

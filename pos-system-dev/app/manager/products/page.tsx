@@ -32,6 +32,30 @@ export default function ProductsPage() {
   const [editProduct, setEditProduct] = useState<Product | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
+  const [availableCategories, setAvailableCategories] = useState<string[]>([
+    "Fresh Produce",
+    "Bakery & Bread",
+    "Dairy & Eggs",
+    "Meat & Seafood",
+    "Pantry & Groceries",
+    "Beverages",
+    "Snacks & Confectionery",
+    "Frozen Foods",
+    "Household & Cleaning",
+    "Personal Care",
+  ])
+
+  useEffect(() => {
+    fetch("/api/categories")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          const names = data.map((c: any) => c.name)
+          setAvailableCategories((prev) => Array.from(new Set([...prev, ...names])))
+        }
+      })
+      .catch(() => {})
+  }, [])
   const { data: session } = useSession()
   const { canAddProducts, canEditProducts, canDeleteProducts, canRegisterProducts } = usePermissions()
   const sessionData = session?.data || session;
@@ -355,10 +379,11 @@ export default function ProductsPage() {
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Beverages">Beverages</SelectItem>
-                      <SelectItem value="Food">Food</SelectItem>
-                      <SelectItem value="Snacks">Snacks</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
+                      {availableCategories.map((cat) => (
+                        <SelectItem key={cat} value={cat}>
+                          {cat}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -457,10 +482,11 @@ export default function ProductsPage() {
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Beverages">Beverages</SelectItem>
-                        <SelectItem value="Food">Food</SelectItem>
-                        <SelectItem value="Snacks">Snacks</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
+                        {availableCategories.map((cat) => (
+                          <SelectItem key={cat} value={cat}>
+                            {cat}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>

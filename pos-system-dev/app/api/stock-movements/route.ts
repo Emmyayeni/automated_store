@@ -66,6 +66,7 @@ export async function GET(req: NextRequest) {
   const result = rows.map((r) => ({
     id: r.id,
     productName: r.productName,
+    productSku: r.productSku,
     quantity: r.quantity,
     balanceAfter: r.balanceAfter,
     balanceBefore: r.balanceBefore,

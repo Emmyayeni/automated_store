@@ -13,7 +13,7 @@ async function main() {
   console.log('Seeded Users:');
   console.table(userRes.rows);
 
-  const locRes = await pool.query('SELECT id, name, type, business_id FROM locations ORDER BY name');
+  const locRes = await pool.query('SELECT id, name, address, business_id FROM locations ORDER BY name');
   console.log('Seeded Branches:');
   console.table(locRes.rows);
 

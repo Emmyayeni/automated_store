@@ -21,7 +21,8 @@ import {
   Sparkles,
   ChevronRight,
   ShieldCheck,
-  CheckCircle2
+  CheckCircle2,
+  Bell
 } from "lucide-react"
 import { RoleBadge } from "@/components/ui/status-badge"
 
@@ -84,6 +85,12 @@ export default function CashierLayout({ children }: CashierLayoutProps) {
       name: "Cash Drawer & Shift",
       href: "/cashier/shift",
       icon: Clock,
+      group: "register",
+    },
+    {
+      name: "Terminal Alerts",
+      href: "/cashier/notifications",
+      icon: Bell,
       group: "register",
     },
     {
