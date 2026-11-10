@@ -87,6 +87,17 @@ interface CompletedSale {
   cashTendered?: number
 }
 
+const safeParsePrice = (val: any): number => {
+  if (typeof val === "number") return isNaN(val) ? 0 : val
+  if (!val) return 0
+  if (typeof val === "string") {
+    const cleaned = val.replace(/[^0-9.-]+/g, "")
+    const parsed = parseFloat(cleaned)
+    return isNaN(parsed) ? 0 : parsed
+  }
+  return 0
+}
+
 export default function CashierDashboardPage() {
   const { data: session } = useSession()
   const router = useRouter()
@@ -135,7 +146,7 @@ export default function CashierDashboardPage() {
           id: p.id,
           name: p.name,
           sku: p.sku || p.barcode || "SKU-" + p.id.slice(0, 5),
-          price: typeof p.price === "string" ? parseFloat(p.price) : Number(p.price || 0),
+          price: safeParsePrice(p.price ?? p.rawPrice),
           stock: typeof p.stock === "number" ? p.stock : (p.inventory?.[0]?.quantity ?? 25),
           category: p.category || "General",
           barcode: p.barcode || p.sku || "",

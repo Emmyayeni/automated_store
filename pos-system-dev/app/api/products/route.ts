@@ -90,11 +90,21 @@ export async function GET(request: NextRequest) {
         .orderBy(products.name);
 
       // Convert numeric fields to numbers and format prices
-      const formattedResult = result.map((product: any) => ({
-        ...product,
-        price: formatPrice(typeof product.price === 'string' ? parseFloat(product.price) : product.price),
-        cost: product.cost ? formatPrice(typeof product.cost === 'string' ? parseFloat(product.cost) : product.cost) : null,
-      }));
+      const formattedResult = result.map((product: any) => {
+        const rawPrice = typeof product.price === 'string' ? parseFloat(product.price) : Number(product.price || 0);
+        const numPrice = isNaN(rawPrice) ? 0 : rawPrice;
+        const rawCost = product.cost ? (typeof product.cost === 'string' ? parseFloat(product.cost) : Number(product.cost || 0)) : null;
+        const numCost = rawCost !== null && !isNaN(rawCost) ? rawCost : null;
+
+        return {
+          ...product,
+          price: numPrice,
+          rawPrice: numPrice,
+          cost: numCost,
+          formattedPrice: formatPrice(numPrice),
+          formattedCost: numCost !== null ? formatPrice(numCost) : null,
+        };
+      });
 
       return NextResponse.json(createSuccessResponse(formattedResult));
     }
@@ -148,11 +158,21 @@ export async function GET(request: NextRequest) {
         .orderBy(products.name);
 
       // Convert numeric fields to numbers and format prices
-      const formattedResult = result.map((product: any) => ({
-        ...product,
-        price: formatPrice(typeof product.price === 'string' ? parseFloat(product.price) : product.price),
-        cost: product.cost ? formatPrice(typeof product.cost === 'string' ? parseFloat(product.cost) : product.cost) : null,
-      }));
+      const formattedResult = result.map((product: any) => {
+        const rawPrice = typeof product.price === 'string' ? parseFloat(product.price) : Number(product.price || 0);
+        const numPrice = isNaN(rawPrice) ? 0 : rawPrice;
+        const rawCost = product.cost ? (typeof product.cost === 'string' ? parseFloat(product.cost) : Number(product.cost || 0)) : null;
+        const numCost = rawCost !== null && !isNaN(rawCost) ? rawCost : null;
+
+        return {
+          ...product,
+          price: numPrice,
+          rawPrice: numPrice,
+          cost: numCost,
+          formattedPrice: formatPrice(numPrice),
+          formattedCost: numCost !== null ? formatPrice(numCost) : null,
+        };
+      });
 
       return NextResponse.json(createSuccessResponse(formattedResult));
     }

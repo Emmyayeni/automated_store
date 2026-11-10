@@ -24,11 +24,11 @@ export interface BusinessCurrencySettings {
   decimalSeparator: string;
 }
 
-// Default settings for Sierra Leone
+// Default settings for supermarket retail currency
 const DEFAULT_CURRENCY_SETTINGS: BusinessCurrencySettings = {
-  currency: 'SLL',
-  locale: 'en-SL',
-  symbol: 'Le',
+  currency: 'USD',
+  locale: 'en-US',
+  symbol: '$',
   position: 'before',
   decimalPlaces: 2,
   thousandsSeparator: ',',
@@ -58,9 +58,10 @@ export const getBusinessCurrencySettings = (): BusinessCurrencySettings => {
  */
 export function parsePrice(price: string | number | null | undefined): number {
   if (price === null || price === undefined) return 0;
-  if (typeof price === 'number') return price;
+  if (typeof price === 'number') return isNaN(price) ? 0 : price;
   if (typeof price === 'string') {
-    const parsed = parseFloat(price);
+    const cleaned = price.replace(/[^0-9.-]+/g, "");
+    const parsed = parseFloat(cleaned);
     return isNaN(parsed) ? 0 : parsed;
   }
   return 0;

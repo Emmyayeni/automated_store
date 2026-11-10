@@ -78,20 +78,25 @@ export default function ProductsPage() {
     const fetchProducts = async () => {
       try {
         const res = await fetch(`/api/products?locationId=${locationId}`)
-        const data = await res.json()
+        const json = await res.json()
+        const rawList = Array.isArray(json) ? json : json.data || []
         setProducts(
-          data.map((p: any) => ({
-            id: p.id,
-            name: p.name,
-            sku: p.sku,
-            barcode: p.barcode,
-            price: p.price,
-            cost: p.cost ?? 0,
-            category: p.category,
-            stock: p.stockQuantity,
-            description: p.description,
-            status: p.isActive ? "active" : "inactive",
-          }))
+          rawList.map((p: any) => {
+            const numPrice = typeof p.price === "number" ? p.price : parseFloat(String(p.price || 0).replace(/[^0-9.-]+/g, "")) || 0
+            const numCost = typeof p.cost === "number" ? p.cost : parseFloat(String(p.cost || 0).replace(/[^0-9.-]+/g, "")) || 0
+            return {
+              id: p.id,
+              name: p.name,
+              sku: p.sku,
+              barcode: p.barcode,
+              price: numPrice,
+              cost: numCost,
+              category: p.category,
+              stock: p.stockQuantity ?? p.stock ?? 25,
+              description: p.description,
+              status: p.isActive ? "active" : "inactive",
+            }
+          })
         )
       } catch {
         toast.error("Failed to load products")
@@ -615,7 +620,7 @@ export default function ProductsPage() {
                   </TableCell>
                   <TableCell className="font-mono">{product.sku}</TableCell>
                   <TableCell>{product.category}</TableCell>
-                  <TableCell className="font-medium">${product.price}</TableCell>
+                  <TableCell className="font-medium font-mono">${Number(product.price || 0).toFixed(2)}</TableCell>
                   <TableCell>
                     <Badge variant={product.stock < 20 ? "destructive" : "default"}>{product.stock}</Badge>
                   </TableCell>
