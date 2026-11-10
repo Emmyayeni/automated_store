@@ -120,6 +120,12 @@ export async function PUT(request: NextRequest) {
       ), { status: 400 });
     }
 
+    let targetBizId = accessControl.user.businessId;
+    if (!targetBizId) {
+      const [firstBiz] = await db.select({ id: businesses.id }).from(businesses).limit(1);
+      targetBizId = firstBiz?.id;
+    }
+
     const [updated] = await db
       .update(businesses)
       .set({
@@ -130,12 +136,12 @@ export async function PUT(request: NextRequest) {
         phone: body.phone,
         email: body.email,
         website: body.website,
-        taxRate: body.taxRate,
+        taxRate: body.taxRate ? String(body.taxRate) : undefined,
         currency: body.currency,
         timezone: body.timezone,
         updatedAt: new Date(),
       })
-      .where(eq(businesses.id, accessControl.user.businessId))
+      .where(eq(businesses.id, targetBizId))
       .returning();
 
     if (!updated) {
@@ -149,6 +155,8 @@ export async function PUT(request: NextRequest) {
     return handleApiError(error, context);
   }
 }
+
+export const PATCH = PUT;
 
 // DELETE: Delete the business and all associated data
 export async function DELETE(request: NextRequest) {
