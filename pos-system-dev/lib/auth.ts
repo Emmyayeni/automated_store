@@ -168,20 +168,22 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async redirect({ url, baseUrl }) {
-      // Custom redirect logic for role-based routing
+      // Allows relative callback URLs without hardcoding baseUrl
       if (url.startsWith("/")) {
-        // Relative URL, make it absolute
-        return `${baseUrl}${url}`;
-      } else if (new URL(url).origin === baseUrl) {
-        // Same origin, allow
         return url;
       }
-      // For login redirects, always go to root which handles role routing
-      return baseUrl;
+      // Allows callback URLs on the same origin
+      try {
+        if (new URL(url).origin === baseUrl) {
+          return url;
+        }
+      } catch {}
+      return url || baseUrl;
     },
   },
   pages: { 
     signIn: "/login",
+    signOut: "/login",
     error: "/login",
   },
 };

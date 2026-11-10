@@ -225,6 +225,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     )
   }
 
+  const handleSignOut = async () => {
+    try {
+      await signOut({ redirect: false })
+    } catch (err) {
+      console.error("Sign out error:", err)
+    } finally {
+      window.location.href = "/login"
+    }
+  }
+
   return (
     <div className="h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col antialiased overflow-hidden">
       {/* ───────────────── TOP HEADER ───────────────── */}
@@ -285,7 +295,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => signOut({ callbackUrl: "/login" })}
+            onClick={handleSignOut}
             className="h-8 px-2.5 text-xs text-slate-600 hover:text-rose-600 hover:border-rose-200 border-slate-200"
             title="Sign Out"
           >

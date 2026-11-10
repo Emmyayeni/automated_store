@@ -33,6 +33,16 @@ export default function POSLayout({ children }: POSLayoutProps) {
     { name: "Settings", href: "/settings", icon: Settings },
   ];
 
+  const handleSignOut = async () => {
+    try {
+      await signOut({ redirect: false })
+    } catch (err) {
+      console.error("Sign out error:", err)
+    } finally {
+      window.location.href = "/login"
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Sidebar */}
@@ -81,7 +91,7 @@ export default function POSLayout({ children }: POSLayoutProps) {
                   variant="ghost"
                   size="sm"
                   className="ml-auto"
-                  onClick={() => signOut({ callbackUrl: "/login" })}
+                  onClick={handleSignOut}
                 >
                   <LogOut className="h-4 w-4" />
                 </Button>

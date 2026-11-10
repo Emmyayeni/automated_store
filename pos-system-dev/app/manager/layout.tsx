@@ -75,6 +75,16 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
 
   const groups = Array.from(new Set(navItems.map((i) => i.group)))
 
+  const handleSignOut = async () => {
+    try {
+      await signOut({ redirect: false })
+    } catch (err) {
+      console.error("Sign out error:", err)
+    } finally {
+      window.location.href = "/login"
+    }
+  }
+
   return (
     <div className="h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col antialiased overflow-hidden">
       {/* Top Header */}
@@ -131,7 +141,7 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
           <Button
             variant="outline"
             size="sm"
-            onClick={() => signOut({ callbackUrl: "/login" })}
+            onClick={handleSignOut}
             className="h-8 px-2.5 text-xs text-slate-600 hover:text-rose-600 hover:border-rose-200 border-slate-200"
           >
             <LogOut className="h-3.5 w-3.5 mr-1" />

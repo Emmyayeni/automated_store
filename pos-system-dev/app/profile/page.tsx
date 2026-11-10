@@ -21,8 +21,14 @@ export default function ProfilePage() {
     toast.success("Profile updated successfully!")
   }
 
-  const handleLogout = () => {
-    signOut({ callbackUrl: "/login" })
+  const handleLogout = async () => {
+    try {
+      await signOut({ redirect: false })
+    } catch (err) {
+      console.error("Sign out error:", err)
+    } finally {
+      window.location.href = "/login"
+    }
   }
 
   if (!user) return null
