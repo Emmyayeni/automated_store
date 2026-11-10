@@ -114,6 +114,8 @@ export function MovementTypeBadge({ type }: { type: MovementType }) {
   return <Badge variant="secondary">{type}</Badge>;
 }
 
+export const MovementBadge = MovementTypeBadge;
+
 export function RoleBadge({ role }: { role: RoleType }) {
   const norm = (role || "").toUpperCase();
   if (norm === "ADMIN") {
