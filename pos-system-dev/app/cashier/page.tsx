@@ -133,21 +133,30 @@ export default function CashierDashboardPage() {
   const fetchProducts = async () => {
     setLoading(true)
     try {
-      const url = locationId ? `/api/products?locationId=${locationId}` : `/api/products`
+      const url = locationId && locationId !== "undefined" ? `/api/products?locationId=${locationId}` : `/api/products`
       let res = await fetch(url)
       if (!res.ok) {
         res = await fetch("/api/admin/products")
       }
-      const data = await res.json()
-      const rawList = Array.isArray(data) ? data : data.data || []
+      let data = await res.json()
+      let rawList = Array.isArray(data) ? data : data.data || []
       
+      // If specific branch returned 0 products, fallback to global catalog
+      if (rawList.length === 0) {
+        const fallbackRes = await fetch("/api/products")
+        if (fallbackRes.ok) {
+          const fallbackData = await fallbackRes.json()
+          rawList = Array.isArray(fallbackData) ? fallbackData : fallbackData.data || []
+        }
+      }
+
       setProducts(
         rawList.map((p: any) => ({
           id: p.id,
           name: p.name,
           sku: p.sku || p.barcode || "SKU-" + p.id.slice(0, 5),
           price: safeParsePrice(p.price ?? p.rawPrice),
-          stock: typeof p.stock === "number" ? p.stock : (p.inventory?.[0]?.quantity ?? 25),
+          stock: typeof p.stock === "number" ? p.stock : (p.stockQuantity ?? p.inventory?.[0]?.quantity ?? 25),
           category: p.category || "General",
           barcode: p.barcode || p.sku || "",
         }))

@@ -58,13 +58,21 @@ export default function CashierInventoryPage() {
   const fetchInventory = async () => {
     setLoading(true)
     try {
-      const url = locationId ? `/api/products?locationId=${locationId}` : `/api/products`
+      const url = locationId && locationId !== "undefined" ? `/api/products?locationId=${locationId}` : `/api/products`
       let res = await fetch(url)
       if (!res.ok) {
         res = await fetch("/api/admin/products")
       }
-      const data = await res.json()
-      const rawList = Array.isArray(data) ? data : data.data || []
+      let data = await res.json()
+      let rawList = Array.isArray(data) ? data : data.data || []
+
+      if (rawList.length === 0) {
+        const fallbackRes = await fetch("/api/products")
+        if (fallbackRes.ok) {
+          const fallbackData = await fallbackRes.json()
+          rawList = Array.isArray(fallbackData) ? fallbackData : fallbackData.data || []
+        }
+      }
 
       setItems(
         rawList.map((p: any) => ({
@@ -74,7 +82,7 @@ export default function CashierInventoryPage() {
           barcode: p.barcode || p.sku || "",
           category: p.category || "General",
           price: safeParsePrice(p.price ?? p.rawPrice),
-          stock: typeof p.stock === "number" ? p.stock : (p.inventory?.[0]?.quantity ?? 25),
+          stock: typeof p.stock === "number" ? p.stock : (p.stockQuantity ?? p.inventory?.[0]?.quantity ?? 25),
           reorderLevel: p.minStockLevel || p.reorderLevel || 10,
         }))
       )

@@ -33,8 +33,6 @@ export async function GET(request: NextRequest) {
       whereConditions.push(
         or(
           like(products.name, `%${search}%`),
-          like(products.genericName, `%${search}%`),
-          like(products.manufacturer, `%${search}%`),
           like(products.barcode, `%${search}%`),
           like(products.sku, `%${search}%`)
         )!
@@ -69,34 +67,10 @@ export async function GET(request: NextRequest) {
         barcode: products.barcode,
         sku: products.sku,
         isActive: products.isActive,
-        
-        // Pharmaceutical fields
-        drugType: products.drugType,
-        drugForm: products.drugForm,
-        strength: products.strength,
-        genericName: products.genericName,
-        brandName: products.brandName,
-        manufacturer: products.manufacturer,
-        batchNumber: products.batchNumber,
-        expiryDate: products.expiryDate,
-        manufacturingDate: products.manufacturingDate,
-        storageConditions: products.storageConditions,
-        activeIngredient: products.activeIngredient,
-        dosageInstructions: products.dosageInstructions,
-        requiresPrescription: products.requiresPrescription,
-        isControlledSubstance: products.isControlledSubstance,
-        
-        // Equipment fields (we'll need to add these to the schema)
-        modelNumber: products.modelNumber,
-        serialNumber: products.serialNumber,
-        warrantyPeriod: products.warrantyPeriod,
-        
-        // Common fields
         costPrice: products.costPrice,
         stockLevel: products.stockLevel,
         reorderLevel: products.reorderLevel,
         location: products.location,
-        
         createdAt: products.createdAt,
         updatedAt: products.updatedAt
       })

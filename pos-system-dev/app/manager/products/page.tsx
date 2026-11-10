@@ -74,10 +74,10 @@ export default function ProductsPage() {
 
   // Fetch products from API using businessId and locationId
   useEffect(() => {
-    if (!businessId || !locationId) return
     const fetchProducts = async () => {
       try {
-        const res = await fetch(`/api/products?locationId=${locationId}`)
+        const url = locationId ? `/api/products?locationId=${locationId}` : `/api/products`
+        const res = await fetch(url)
         const json = await res.json()
         const rawList = Array.isArray(json) ? json : json.data || []
         setProducts(

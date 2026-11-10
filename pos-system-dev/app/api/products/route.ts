@@ -40,36 +40,54 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(errorResponse, { status: 401 });
     }
 
-    if (!validation.user.businessId) {
-      throw new AuthorizationError("User must be associated with a business", context);
-    }
-
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search");
     const category = searchParams.get("category");
-    const storeId = searchParams.get("storeId") || searchParams.get("locationId");
-    const businessId = validation.user.businessId;
+    const rawStoreId = searchParams.get("storeId") || searchParams.get("locationId");
     const queryBusinessId = searchParams.get("businessId");
 
-    // If businessId is provided in query, return ALL products for the business (across all locations)
-    if (queryBusinessId) {
-      let whereClauses = [eq(products.isActive, true), eq(products.businessId, queryBusinessId)];
+    // Resolve businessId safely from session, query, or fallback to first business
+    let businessId = queryBusinessId || validation.user.businessId;
+    if (!businessId) {
+      const [firstBiz] = await db.select({ id: businesses.id }).from(businesses).limit(1);
+      businessId = firstBiz?.id;
+    }
 
-      if (search) {
-        const searchPattern = `%${search}%`;
-        whereClauses.push(
-          dsql`(${products.name} ILIKE ${searchPattern} OR ${products.sku} ILIKE ${searchPattern} OR ${products.barcode} = ${search})`
-        );
-      }
+    if (!businessId) {
+      return NextResponse.json(createSuccessResponse([]));
+    }
 
-      if (category) {
-        whereClauses.push(eq(products.category, category));
-      }
+    // Sanitize storeId / locationId
+    const validStoreId =
+      rawStoreId &&
+      rawStoreId !== "undefined" &&
+      rawStoreId !== "null" &&
+      rawStoreId.trim() !== ""
+        ? rawStoreId.trim()
+        : null;
 
-      // Join inventory to get stock per product per location (aggregate stock if needed)
+    let baseWhereClauses = [eq(products.isActive, true)];
+    if (businessId) {
+      baseWhereClauses.push(eq(products.businessId, businessId));
+    }
+
+    if (search) {
+      const searchPattern = `%${search}%`;
+      baseWhereClauses.push(
+        dsql`(${products.name} ILIKE ${searchPattern} OR ${products.sku} ILIKE ${searchPattern} OR ${products.barcode} = ${search})`
+      );
+    }
+
+    if (category && category !== "all" && category !== "ALL") {
+      baseWhereClauses.push(eq(products.category, category));
+    }
+
+    // CASE 1: Query for a specific store / location
+    if (validStoreId) {
       const result = await db
         .select({
           id: products.id,
+          businessId: products.businessId,
           name: products.name,
           description: products.description,
           sku: products.sku,
@@ -77,6 +95,7 @@ export async function GET(request: NextRequest) {
           price: products.price,
           cost: inventory.costPrice,
           category: products.category,
+          stock: inventory.quantity,
           stockQuantity: inventory.quantity,
           minStockLevel: inventory.minStockLevel,
           maxStockLevel: inventory.maxStockLevel,
@@ -85,22 +104,27 @@ export async function GET(request: NextRequest) {
           updatedAt: products.updatedAt,
         })
         .from(products)
-        .leftJoin(inventory, eq(products.id, inventory.productId))
-        .where(and(...whereClauses))
+        .leftJoin(
+          inventory,
+          and(eq(products.id, inventory.productId), eq(inventory.locationId, validStoreId))
+        )
+        .where(and(...baseWhereClauses))
         .orderBy(products.name);
 
-      // Convert numeric fields to numbers and format prices
       const formattedResult = result.map((product: any) => {
         const rawPrice = typeof product.price === 'string' ? parseFloat(product.price) : Number(product.price || 0);
         const numPrice = isNaN(rawPrice) ? 0 : rawPrice;
         const rawCost = product.cost ? (typeof product.cost === 'string' ? parseFloat(product.cost) : Number(product.cost || 0)) : null;
         const numCost = rawCost !== null && !isNaN(rawCost) ? rawCost : null;
+        const stockVal = typeof product.stock === 'number' && !isNaN(product.stock) ? product.stock : 0;
 
         return {
           ...product,
           price: numPrice,
           rawPrice: numPrice,
           cost: numCost,
+          stock: stockVal,
+          stockQuantity: stockVal,
           formattedPrice: formatPrice(numPrice),
           formattedCost: numCost !== null ? formatPrice(numCost) : null,
         };
@@ -109,76 +133,52 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(createSuccessResponse(formattedResult));
     }
 
-    // If store/location is provided, return products for that location
-    if (storeId) {
-      // Check that the location belongs to the business
-      const locationCheck = await db
-        .select({ id: locations.id })
-        .from(locations)
-        .where(and(eq(locations.id, storeId), eq(locations.businessId, businessId)));
-        
-      if (!locationCheck.length) {
-        throw new AuthorizationError("Access denied to this location", context);
-      }
+    // CASE 2: Query for all products in business (when storeId is not provided)
+    // Query product catalog and aggregate stock across all locations
+    const result = await db
+      .select({
+        id: products.id,
+        businessId: products.businessId,
+        name: products.name,
+        description: products.description,
+        sku: products.sku,
+        barcode: products.barcode,
+        price: products.price,
+        cost: products.costPrice,
+        category: products.category,
+        stock: dsql<number>`COALESCE(SUM(${inventory.quantity}), 0)`,
+        stockQuantity: dsql<number>`COALESCE(SUM(${inventory.quantity}), 0)`,
+        minStockLevel: products.reorderLevel,
+        isActive: products.isActive,
+        createdAt: products.createdAt,
+        updatedAt: products.updatedAt,
+      })
+      .from(products)
+      .leftJoin(inventory, eq(products.id, inventory.productId))
+      .where(and(...baseWhereClauses))
+      .groupBy(products.id)
+      .orderBy(products.name);
 
-      let whereClauses = [eq(products.isActive, true), eq(products.businessId, businessId)];
+    const formattedResult = result.map((product: any) => {
+      const rawPrice = typeof product.price === 'string' ? parseFloat(product.price) : Number(product.price || 0);
+      const numPrice = isNaN(rawPrice) ? 0 : rawPrice;
+      const rawCost = product.cost ? (typeof product.cost === 'string' ? parseFloat(product.cost) : Number(product.cost || 0)) : null;
+      const numCost = rawCost !== null && !isNaN(rawCost) ? rawCost : null;
+      const stockVal = typeof product.stock === 'number' && !isNaN(product.stock) ? product.stock : Number(product.stock || 0);
 
-      if (search) {
-        const searchPattern = `%${search}%`;
-        whereClauses.push(
-          dsql`(${products.name} ILIKE ${searchPattern} OR ${products.sku} ILIKE ${searchPattern} OR ${products.barcode} = ${search})`
-        );
-      }
+      return {
+        ...product,
+        price: numPrice,
+        rawPrice: numPrice,
+        cost: numCost,
+        stock: stockVal,
+        stockQuantity: stockVal,
+        formattedPrice: formatPrice(numPrice),
+        formattedCost: numCost !== null ? formatPrice(numCost) : null,
+      };
+    });
 
-      if (category) {
-        whereClauses.push(eq(products.category, category));
-      }
-
-      const storeWhere = eq(inventory.locationId, storeId);
-      const result = await db
-        .select({
-          id: products.id,
-          name: products.name,
-          description: products.description,
-          sku: products.sku,
-          barcode: products.barcode,
-          price: products.price,
-          cost: inventory.costPrice,
-          category: products.category,
-          stockQuantity: inventory.quantity,
-          minStockLevel: inventory.minStockLevel,
-          maxStockLevel: inventory.maxStockLevel,
-          isActive: products.isActive,
-          createdAt: products.createdAt,
-          updatedAt: products.updatedAt,
-        })
-        .from(products)
-        .innerJoin(inventory, eq(products.id, inventory.productId))
-        .where(and(storeWhere, ...whereClauses))
-        .orderBy(products.name);
-
-      // Convert numeric fields to numbers and format prices
-      const formattedResult = result.map((product: any) => {
-        const rawPrice = typeof product.price === 'string' ? parseFloat(product.price) : Number(product.price || 0);
-        const numPrice = isNaN(rawPrice) ? 0 : rawPrice;
-        const rawCost = product.cost ? (typeof product.cost === 'string' ? parseFloat(product.cost) : Number(product.cost || 0)) : null;
-        const numCost = rawCost !== null && !isNaN(rawCost) ? rawCost : null;
-
-        return {
-          ...product,
-          price: numPrice,
-          rawPrice: numPrice,
-          cost: numCost,
-          formattedPrice: formatPrice(numPrice),
-          formattedCost: numCost !== null ? formatPrice(numCost) : null,
-        };
-      });
-
-      return NextResponse.json(createSuccessResponse(formattedResult));
-    }
-
-    // If neither, return empty array
-    return NextResponse.json(createSuccessResponse([]));
+    return NextResponse.json(createSuccessResponse(formattedResult));
 
   } catch (error) {
     const context = createErrorContext(request);

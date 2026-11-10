@@ -140,7 +140,14 @@ export default function ProductsPage() {
       }
       if (res.ok) {
         const json = await res.json()
-        const list = Array.isArray(json) ? json : json.data || []
+        let list = Array.isArray(json) ? json : json.data || []
+        if (list.length === 0) {
+          const fallbackRes = await fetch("/api/products")
+          if (fallbackRes.ok) {
+            const fallbackJson = await fallbackRes.json()
+            list = Array.isArray(fallbackJson) ? fallbackJson : fallbackJson.data || []
+          }
+        }
         setProducts(list)
       }
     } catch (err) {

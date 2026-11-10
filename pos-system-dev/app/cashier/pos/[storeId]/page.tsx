@@ -189,13 +189,22 @@ export default function StorePOSPage() {
   const loadProducts = async () => {
     setLoading(true)
     try {
-      const url = storeId ? `/api/products?locationId=${storeId}` : `/api/products`
+      const url = storeId && storeId !== "undefined" ? `/api/products?locationId=${storeId}` : `/api/products`
       let res = await fetch(url)
       if (!res.ok) {
         res = await fetch("/api/admin/products")
       }
-      const data = await res.json()
-      const rawList = Array.isArray(data) ? data : data.data || []
+      let data = await res.json()
+      let rawList = Array.isArray(data) ? data : data.data || []
+
+      // If specific branch returned 0 products, fallback to global catalog
+      if (rawList.length === 0) {
+        const fallbackRes = await fetch("/api/products")
+        if (fallbackRes.ok) {
+          const fallbackData = await fallbackRes.json()
+          rawList = Array.isArray(fallbackData) ? fallbackData : fallbackData.data || []
+        }
+      }
 
       setProducts(
         rawList.map((p: any) => ({
@@ -204,7 +213,7 @@ export default function StorePOSPage() {
           sku: p.sku || p.barcode || "SKU-" + p.id.slice(0, 5),
           barcode: p.barcode || p.sku || "",
           price: safeParsePrice(p.price ?? p.rawPrice),
-          stock: typeof p.stock === "number" ? p.stock : (p.inventory?.[0]?.quantity ?? 25),
+          stock: typeof p.stock === "number" ? p.stock : (p.stockQuantity ?? p.inventory?.[0]?.quantity ?? 25),
           category: p.category || "General",
         }))
       )
