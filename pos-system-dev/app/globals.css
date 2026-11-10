@@ -31,6 +31,44 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+  .focus-ring {
+    outline: none;
+    transition: box-shadow 0.15s ease-in-out;
+  }
+  .focus-ring:focus-visible {
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px #14532D;
+  }
+  .card-hover {
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.07);
+    border-color: #cbd5e1;
+  }
+  .glass-card {
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .thermal-receipt {
+    background: #ffffff;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    position: relative;
+  }
+  .thermal-receipt::after {
+    content: "";
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    right: 0;
+    height: 8px;
+    background: radial-gradient(circle, transparent, transparent 50%, #ffffff 50%, #ffffff 100%);
+    background-size: 16px 16px;
+  }
 }
 
 @layer base {

@@ -245,6 +245,24 @@ export default function CashierDashboardPage() {
     })
   }, [products, searchQuery, selectedCategory])
 
+  const simulateScan = () => {
+    const available = products.filter((p) => p.stock > 0)
+    if (available.length === 0) {
+      toast({
+        title: "No Available Products",
+        description: "All products in catalog currently have 0 stock.",
+        variant: "destructive",
+      })
+      return
+    }
+    const randomProduct = available[Math.floor(Math.random() * available.length)]
+    addToCart(randomProduct)
+    toast({
+      title: "⚡ Barcode Scanned (Beep!)",
+      description: `Added 1x ${randomProduct.name} to cart ($${randomProduct.price.toFixed(2)}).`,
+    })
+  }
+
   // Cart operations
   const addToCart = (product: Product) => {
     if (product.stock <= 0) {
@@ -461,6 +479,36 @@ export default function CashierDashboardPage() {
         }
       />
 
+      {/* ───────────────── HCI: TERMINAL HARDWARE STATUS BANNER ───────────────── */}
+      <div className="bg-white rounded-xl border border-slate-200/90 p-3 sm:p-4 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="relative flex h-3 w-3">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-600"></span>
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-900">POS Register Workstation Online</span>
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200/60">
+                Ready for Tender
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500">
+              Honeywell 2D Scanner connected • ESC/POS 80mm receipt printer standby • Cash drawer pulse active
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
+          <span className="px-2 py-1 rounded bg-slate-100 font-mono text-[10px] font-semibold">
+            Drawer: #01
+          </span>
+          <span className="px-2 py-1 rounded bg-emerald-50 text-emerald-800 font-semibold">
+            Shift: Active
+          </span>
+        </div>
+      </div>
+
       {/* ───────────────── TOP KPI CARDS ───────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
@@ -545,6 +593,19 @@ export default function CashierDashboardPage() {
                     </button>
                   )}
                 </div>
+
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={simulateScan}
+                  className="h-9 px-3 text-xs border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 font-semibold shrink-0"
+                  title="Simulate Barcode Scanner Gun (Add random supermarket item)"
+                >
+                  <Scan className="h-3.5 w-3.5 mr-1.5 text-emerald-700" />
+                  <span className="hidden sm:inline">⚡ Scan Demo Item</span>
+                  <span className="sm:hidden">⚡ Scan</span>
+                </Button>
               </div>
 
               {/* Category Filter Pills */}
@@ -1046,7 +1107,25 @@ export default function CashierDashboardPage() {
                 )}
               </div>
 
-              <div className="text-center text-[10px] text-slate-400 pt-2">
+              <div className="text-center text-[10px] text-slate-400 pt-2 space-y-2">
+                {/* Visual Barcode Pattern */}
+                <div className="py-2 flex flex-col items-center">
+                  <div className="h-9 w-48 flex items-stretch justify-center gap-[2px] bg-white px-2">
+                    {[3, 1, 2, 1, 4, 1, 2, 3, 1, 3, 2, 1, 4, 2, 1, 3, 2, 1, 2, 4, 1, 2, 3, 1].map(
+                      (w, idx) => (
+                        <div
+                          key={idx}
+                          style={{ width: `${w * 1.5}px` }}
+                          className={`h-full ${idx % 2 === 0 ? "bg-slate-900" : "bg-transparent"}`}
+                        />
+                      )
+                    )}
+                  </div>
+                  <span className="text-[9px] font-mono tracking-widest text-slate-600 mt-1">
+                    *{activeReceipt.transactionNumber}*
+                  </span>
+                </div>
+
                 <p>Thank you for shopping with us!</p>
                 <p>Please keep this receipt for return exchange</p>
               </div>

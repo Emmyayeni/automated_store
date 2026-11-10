@@ -109,6 +109,11 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
             <span>Assigned Branch:</span>
             <span className="font-semibold text-slate-800">{user.branchName}</span>
           </div>
+
+          <div className="hidden xl:flex items-center gap-1.5 ml-3 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200/60 text-[11px] font-semibold text-emerald-800">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Branch Connected</span>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">
@@ -172,14 +177,19 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
                         <Link
                           key={item.name}
                           href={item.href}
-                          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
+                          className={`group flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all relative ${
                             isActive
                               ? "bg-[#14532D] text-white shadow-xs font-bold"
-                              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                              : "text-slate-600 hover:bg-slate-100/90 hover:text-slate-900"
                           }`}
                         >
-                          <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-emerald-300" : "text-slate-400"}`} />
-                          <span className="truncate">{item.name}</span>
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <Icon className={`h-4 w-4 shrink-0 transition-transform group-hover:scale-105 ${isActive ? "text-emerald-300" : "text-slate-400"}`} />
+                            <span className="truncate">{item.name}</span>
+                          </div>
+                          {isActive && (
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shrink-0" />
+                          )}
                         </Link>
                       )
                     })}

@@ -145,19 +145,23 @@ export default function CashierLayout({ children }: CashierLayoutProps) {
               <Link
                 key={item.name}
                 href={item.href}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
+                className={`group flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all relative ${
                   isActive
                     ? "bg-[#14532D] text-white shadow-xs font-bold"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                    : "text-slate-600 hover:bg-slate-100/90 hover:text-slate-900"
                 }`}
               >
-                <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-emerald-300" : "text-slate-400"}`} />
-                <span className="truncate flex-1">{item.name}</span>
-                {item.badge && (
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <Icon className={`h-4 w-4 shrink-0 transition-transform group-hover:scale-105 ${isActive ? "text-emerald-300" : "text-slate-400"}`} />
+                  <span className="truncate">{item.name}</span>
+                </div>
+                {item.badge ? (
                   <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
                     {item.badge}
                   </span>
-                )}
+                ) : isActive ? (
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shrink-0" />
+                ) : null}
               </Link>
             )
           })}

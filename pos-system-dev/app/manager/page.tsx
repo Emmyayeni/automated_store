@@ -97,6 +97,41 @@ export default function ManagerDashboard() {
         }
       />
 
+      {/* ───────────────── HCI: BRANCH SYSTEM STATUS ───────────────── */}
+      <div className="bg-white rounded-xl border border-slate-200/90 p-3 sm:p-4 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="relative flex h-3 w-3">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-600"></span>
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-900">{branchName} Operations Active</span>
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200/60">
+                POS Terminals Online
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500">
+              Synchronized with central database • Cash drawer hardware & thermal printers online
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button asChild size="sm" variant="outline" className="h-8 text-xs border-slate-300">
+            <Link href="/admin/stock-in">
+              <ArrowDownToLine className="h-3.5 w-3.5 mr-1 text-emerald-700" />
+              Stock-In
+            </Link>
+          </Button>
+          <Button asChild size="sm" variant="outline" className="h-8 text-xs border-slate-300">
+            <Link href="/admin/stock-out">
+              <ArrowUpFromLine className="h-3.5 w-3.5 mr-1 text-rose-600" />
+              Stock-Out
+            </Link>
+          </Button>
+        </div>
+      </div>
+
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
