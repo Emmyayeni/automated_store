@@ -84,7 +84,7 @@ export function StatCard({
               {trend.value}
             </span>
           )}
-          {displaySubtitle && <span className="truncate">{displaySubtitle}</span>}
+          {displaySubtitle && <span className="truncate" title={displaySubtitle}>{displaySubtitle}</span>}
         </div>
       )}
     </div>

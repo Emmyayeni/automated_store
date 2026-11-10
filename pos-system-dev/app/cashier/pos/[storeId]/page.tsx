@@ -726,7 +726,7 @@ export default function StorePOSPage() {
 
                       <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-100">
                         <span className="text-sm font-black text-[#14532D]">
-                          ₦{product.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          ₦{Number(product.price || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                         <div
                           className={`h-7 w-7 rounded-lg flex items-center justify-center transition-colors ${
@@ -807,7 +807,7 @@ export default function StorePOSPage() {
                       {item.name}
                     </p>
                     <p className="text-[11px] text-slate-500 font-semibold mt-0.5">
-                      ₦{item.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} each
+                      ₦{Number(item.price || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} each
                     </p>
                   </div>
 
@@ -844,7 +844,7 @@ export default function StorePOSPage() {
 
                   {/* Line Total */}
                   <div className="w-24 text-right font-black text-slate-900 text-sm shrink-0">
-                    ₦{(item.price * item.quantity).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    ₦{Number((item.price || 0) * item.quantity).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                 </div>
               ))
@@ -1113,7 +1113,7 @@ export default function StorePOSPage() {
                     <span className="truncate flex-1 pr-2">
                       {item.name} x{item.quantity}
                     </span>
-                    <span>₦{(item.price * item.quantity).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span>₦{Number((item.price || 0) * item.quantity).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                 ))}
               </div>

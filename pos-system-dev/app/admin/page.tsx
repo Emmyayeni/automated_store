@@ -228,7 +228,7 @@ export default function AdminDashboard() {
         <StatCard
           title="Stock In Hand"
           value={summary.totalStockUnits?.toLocaleString() || "0"}
-          subtitle="Physical units across branches"
+          subtitle="Across all branches"
           icon={Layers}
           iconColor="text-blue-600"
         />
