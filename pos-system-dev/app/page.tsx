@@ -1,8 +1,14 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
+import type { Metadata } from "next";
 import { authOptions } from "@/lib/auth";
 import { ROLE_DASHBOARD_PATH } from "@/lib/roles";
 import LandingPage from "@/components/marketing/landing-page";
+
+export const metadata: Metadata = {
+  title: "Automated Inventory Control System | Multi-Branch Inventory Management",
+  description: "Manage products, monitor stock levels, coordinate stock transfers and track inventory across multiple supermarket branches with a centralized inventory management system.",
+};
 
 export default async function HomePage() {
   const session = await getServerSession(authOptions);
