@@ -36,29 +36,48 @@ export function StatCard({
     return <IconComponent className="h-4 w-4" />
   }
 
-  return (
-    <div className="bg-white rounded-xl border border-slate-200/90 p-4 sm:p-5 shadow-2xs hover:shadow-md hover:border-slate-300 transition-all duration-200 group">
-      <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
-        <span className="truncate tracking-wide">{title}</span>
-        {icon && (
-          <div className={`p-2 rounded-xl bg-slate-50/80 border border-slate-100/80 group-hover:bg-emerald-50/50 group-hover:border-emerald-100 transition-colors ${iconColor}`}>
-            {renderIcon()}
-          </div>
-        )}
-      </div>
+  // Dynamic typography to prevent overflow on long numbers and currencies (e.g. ₦3,301,300.00)
+  const valStr = String(value ?? "")
+  const isExtraLong = valStr.length > 14
+  const isLong = valStr.length > 10
+  const isMedium = valStr.length > 7
 
-      <div className="mt-3 flex items-baseline justify-between gap-2">
-        <div className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 font-mono">
-          {value}
+  const valueSizeClass = isExtraLong
+    ? "text-base sm:text-lg font-bold"
+    : isLong
+    ? "text-lg sm:text-xl font-extrabold"
+    : isMedium
+    ? "text-xl sm:text-2xl font-black"
+    : "text-2xl sm:text-3xl font-black"
+
+  return (
+    <div className="bg-white rounded-xl border border-slate-200/90 p-3.5 sm:p-5 shadow-2xs hover:shadow-md hover:border-slate-300 transition-all duration-200 group overflow-hidden flex flex-col justify-between">
+      <div>
+        <div className="flex items-center justify-between text-slate-500 text-xs font-semibold gap-1">
+          <span className="truncate tracking-wide">{title}</span>
+          {icon && (
+            <div className={`p-1.5 sm:p-2 rounded-xl bg-slate-50/80 border border-slate-100/80 group-hover:bg-emerald-50/50 group-hover:border-emerald-100 transition-colors shrink-0 ${iconColor}`}>
+              {renderIcon()}
+            </div>
+          )}
         </div>
-        {badge}
+
+        <div className="mt-2.5 sm:mt-3 flex items-baseline justify-between gap-1.5 overflow-hidden">
+          <div
+            title={typeof value === "string" ? value : undefined}
+            className={`${valueSizeClass} tracking-tight text-slate-900 font-mono truncate`}
+          >
+            {value}
+          </div>
+          {badge && <div className="shrink-0">{badge}</div>}
+        </div>
       </div>
 
       {(displaySubtitle || trend) && (
-        <div className="mt-1.5 flex items-center gap-2 text-xs text-slate-500">
+        <div className="mt-1.5 flex items-center gap-1.5 text-[11px] sm:text-xs text-slate-500 overflow-hidden">
           {trend && (
             <span
-              className={`font-semibold ${
+              className={`font-semibold shrink-0 ${
                 trend.isPositive ? "text-emerald-700" : "text-rose-600"
               }`}
             >

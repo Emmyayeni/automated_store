@@ -215,10 +215,10 @@ export default function AdminDashboard() {
           value={
             summary.totalValuation
               ? `₦${Number(summary.totalValuation).toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
+                  minimumFractionDigits: Number(summary.totalValuation) % 1 !== 0 ? 2 : 0,
                   maximumFractionDigits: 2,
                 })}`
-              : "₦0.00"
+              : "₦0"
           }
           subtitle="Consolidated asset value"
           icon={TrendingUp}
