@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const urgency = searchParams.get("urgency");
 
     const allowedUrgencies = ["high", "low", "medium", "critical"] as const;
-    let whereClauses: any[] = [eq(reorderSuggestions.isProcessed, false)];
+    const whereClauses = [eq(reorderSuggestions.status, "pending" as const)];
 
     if (locationId) {
       whereClauses.push(eq(reorderSuggestions.locationId, locationId));
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     if (urgency && allowedUrgencies.includes(urgency as any)) {
       whereClauses.push(
         eq(
-          reorderSuggestions.urgencyLevel,
+          reorderSuggestions.priority,
           urgency as typeof allowedUrgencies[number]
         )
       );
@@ -35,10 +35,10 @@ export async function GET(request: NextRequest) {
         id: reorderSuggestions.id,
         productId: reorderSuggestions.productId,
         currentStock: reorderSuggestions.currentStock,
-        suggestedQuantity: reorderSuggestions.suggestedOrderQuantity,
-        urgencyLevel: reorderSuggestions.urgencyLevel,
+        suggestedQuantity: reorderSuggestions.suggestedQuantity,
+        urgencyLevel: reorderSuggestions.priority,
         reason: reorderSuggestions.reason,
-        estimatedStockoutDate: reorderSuggestions.estimatedStockoutDate,
+        estimatedStockoutDate: dsql<string | null>`NULL`,
         createdAt: reorderSuggestions.createdAt,
         productName: products.name,
         sku: products.sku,
@@ -47,10 +47,13 @@ export async function GET(request: NextRequest) {
       })
       .from(reorderSuggestions)
       .innerJoin(products, eq(reorderSuggestions.productId, products.id))
-      .leftJoin(suppliers, eq(reorderSuggestions.suggestedSupplierId, suppliers.id))
+      .leftJoin(
+        suppliers,
+        dsql`false`
+      )
       .where(and(...whereClauses))
       .orderBy(
-        dsql`CASE ${reorderSuggestions.urgencyLevel} 
+        dsql`CASE ${reorderSuggestions.priority}
           WHEN 'critical' THEN 1 
           WHEN 'high' THEN 2 
           WHEN 'medium' THEN 3 
@@ -71,7 +74,7 @@ export async function GET(request: NextRequest) {
         estimatedStockoutDate: suggestion.estimatedStockoutDate,
         supplierName: suggestion.supplierName,
         estimatedCost:
-          suggestion.suggestedQuantity * Number.parseFloat(suggestion.price || 0),
+          suggestion.suggestedQuantity * Number.parseFloat(String(suggestion.price || 0)),
         createdAt: suggestion.createdAt,
       }))
     );
@@ -99,23 +102,27 @@ export async function POST(request: NextRequest) {
         // Create purchase order
         const poNumber = `PO-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
         await db.insert(purchaseOrders).values({
-          poNumber,
-          supplierId: s.suggestedSupplierId,
-          userId: "system",
-          totalAmount: s.suggestedOrderQuantity * 10, // Replace with actual cost logic if needed
+          businessId: s.businessId,
+          locationId: s.locationId,
+          supplierId: Array.isArray(s.supplierIds) ? String(s.supplierIds[0]) : String(s.supplierIds || ""),
+          orderNumber: poNumber,
+          orderDate: new Date().toISOString().slice(0, 10),
+          subtotal: String(s.suggestedQuantity * 10),
+          totalAmount: String(s.suggestedQuantity * 10),
+          createdBy: s.businessId,
           notes: "Auto-generated from reorder suggestion",
         });
 
         // Mark as processed
         await db
           .update(reorderSuggestions)
-          .set({ isProcessed: true })
+          .set({ status: "approved" })
           .where(eq(reorderSuggestions.id, s.id));
       }
     } else if (action === "dismiss") {
       await db
         .update(reorderSuggestions)
-        .set({ isProcessed: true })
+        .set({ status: "dismissed" })
         .where(inArray(reorderSuggestions.id, suggestionIds));
     }
 

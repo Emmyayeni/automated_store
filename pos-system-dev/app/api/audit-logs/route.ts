@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
         action: inventoryAuditLogs.action,
         entityType: inventoryAuditLogs.entityType,
         entityId: inventoryAuditLogs.entityId,
-        details: inventoryAuditLogs.details,
+        details: inventoryAuditLogs.newValues,
         ipAddress: inventoryAuditLogs.ipAddress,
         createdAt: inventoryAuditLogs.createdAt,
         userName: users.name,

@@ -73,7 +73,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .set({ 
         status: "void",
         notes: `Voided by ${validation.user.name || validation.user.email}. Reason: ${reason || 'No reason provided'}`,
-        updatedAt: new Date()
       })
       .where(eq(transactions.id, transactionId))
       .returning();
@@ -122,7 +121,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         transactionNumber: voidedTransaction.transactionNumber,
         status: voidedTransaction.status,
         notes: voidedTransaction.notes,
-        updatedAt: voidedTransaction.updatedAt,
       },
       restoredItems,
       message: "Transaction voided successfully",

@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
         productId: transactionItems.productId,
         productName: products.name,
         totalQuantity: sql`SUM(${transactionItems.quantity})`.as("total_quantity"),
-        totalRevenue: sql`SUM(${transactionItems.price} * ${transactionItems.quantity})`.as("total_revenue"),
+        totalRevenue: sql`SUM(${transactionItems.unitPrice} * ${transactionItems.quantity})`.as("total_revenue"),
       })
       .from(transactions)
       .innerJoin(transactionItems, eq(transactions.id, transactionItems.transactionId))
@@ -202,21 +202,23 @@ export async function POST(request: NextRequest) {
       await db
         .insert(salesForecasts)
         .values({
+          businessId: accessControl.user.businessId!,
           locationId: forecast.locationId || null,
           productId: forecast.productId,
           forecastDate: forecast.forecastDate,
+          forecastType: "daily",
           predictedQuantity: forecast.predictedQuantity,
           predictedRevenue: forecast.predictedRevenue,
-          confidenceScore: forecast.confidenceScore,
-          modelVersion: "v1.0",
+          confidence: forecast.confidenceScore?.toString(),
+          model: "v1.0",
         })
         .onConflictDoUpdate({
           target: [salesForecasts.locationId, salesForecasts.productId, salesForecasts.forecastDate],
           set: {
             predictedQuantity: forecast.predictedQuantity,
             predictedRevenue: forecast.predictedRevenue,
-            confidenceScore: forecast.confidenceScore,
-            modelVersion: "v1.0",
+            confidence: forecast.confidenceScore?.toString(),
+            model: "v1.0",
           },
         });
     }

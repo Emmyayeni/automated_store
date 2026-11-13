@@ -83,10 +83,6 @@ export async function GET(request: NextRequest) {
         )
       );
 
-    if (locationId) {
-      query = query.where(eq(inventory.locationId, locationId));
-    }
-
     const reorderSuggestions = await query
       .orderBy(sql`${inventory.quantity} - ${inventory.minStockLevel}`)
       .limit(100);
@@ -129,7 +125,6 @@ export async function POST(request: NextRequest) {
         maxStockLevel: inventory.maxStockLevel,
         reorderQuantity: sql`${inventory.maxStockLevel} - ${inventory.quantity}`,
         costPrice: inventory.costPrice,
-        supplierId: products.supplierId, // Assuming products have a default supplier
       })
       .from(inventory)
       .innerJoin(products, eq(inventory.productId, products.id))
@@ -150,7 +145,7 @@ export async function POST(request: NextRequest) {
 
     // Group items by supplier
     const itemsBySupplier = reorderItems.reduce((acc, item) => {
-      const supplierId = item.supplierId || 'default';
+      const supplierId = supplierIds?.[0] || 'default';
       if (!acc[supplierId]) {
         acc[supplierId] = [];
       }
@@ -175,14 +170,16 @@ export async function POST(request: NextRequest) {
       const [purchaseOrder] = await db
         .insert(purchaseOrders)
         .values({
+          businessId: (session.user as { businessId?: string }).businessId || "",
           orderNumber,
           locationId,
-          supplierId: supplierId !== 'default' ? supplierId : null,
+          supplierId: supplierId !== 'default' ? supplierId : (supplierIds?.[0] ?? ""),
           status: autoApprove ? 'approved' : 'pending',
           totalAmount: totalAmount.toString(),
-          requestedBy: session.user.id || 'system',
-          requestedDate: new Date(),
-          approvedDate: autoApprove ? new Date() : null,
+          subtotal: totalAmount.toString(),
+          orderDate: new Date().toISOString().slice(0, 10),
+          createdBy: session.user.id || "",
+          approvedAt: autoApprove ? new Date() : null,
           notes: 'Auto-generated from reorder suggestions'
         })
         .returning();

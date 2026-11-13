@@ -21,8 +21,8 @@ export async function GET(request: NextRequest) {
         id: shifts.id,
         userId: shifts.userId,
         locationId: shifts.locationId,
-        openedAt: shifts.openedAt,
-        closedAt: shifts.closedAt,
+        openedAt: shifts.startTime,
+        closedAt: shifts.endTime,
         openingCash: shifts.openingCash,
         closingCash: shifts.closingCash,
         status: shifts.status,
@@ -45,11 +45,11 @@ export async function GET(request: NextRequest) {
       whereConditions.push(eq(shifts.locationId, locationId));
     }
     if (activeOnly) {
-      whereConditions.push(eq(shifts.status, "open"));
+      whereConditions.push(eq(shifts.status, "active"));
     }
 
     if (whereConditions.length > 0) {
-      const result = await query.where(and(...whereConditions)).orderBy(desc(shifts.openedAt));
+      const result = await query.where(and(...whereConditions)).orderBy(desc(shifts.startTime));
       
       // Convert numeric fields
       const formattedResult = result.map(shift => ({
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json(createSuccessResponse(formattedResult));
     } else {
-      const result = await query.orderBy(desc(shifts.openedAt));
+      const result = await query.orderBy(desc(shifts.startTime));
       
       // Convert numeric fields
       const formattedResult = result.map(shift => ({
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
       .where(and(
         eq(shifts.userId, userId),
         eq(shifts.locationId, locationId),
-        eq(shifts.status, "open")
+        eq(shifts.status, "active")
       ));
 
     if (existingShift.length > 0) {
@@ -112,10 +112,11 @@ export async function POST(request: NextRequest) {
     const [shift] = await db
       .insert(shifts)
       .values({
+        businessId: session.user.businessId as string,
         userId,
         locationId,
         openingCash: openingCash || 0,
-        status: "open",
+        status: "active",
         notes,
       })
       .returning();
@@ -155,7 +156,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json(createErrorResponse("Shift not found"), { status: 404 });
     }
 
-    if (existingShift.status === "closed") {
+    if (existingShift.status === "completed") {
       return NextResponse.json(createErrorResponse("Shift is already closed"), { status: 400 });
     }
 
@@ -163,8 +164,8 @@ export async function PATCH(request: NextRequest) {
       .update(shifts)
       .set({
         closingCash,
-        closedAt: new Date(),
-        status: "closed",
+        endTime: new Date(),
+        status: "completed",
         notes,
         updatedAt: new Date(),
       })

@@ -161,7 +161,8 @@ export async function POST(request: NextRequest) {
         transactionId,
         employeeId: tipEmployeeId,
         amount: tipAmount.toString(),
-        tipType: "split",
+        tipType: "cash",
+        paymentMethod: "cash",
         createdAt: new Date(),
       }).returning();
 

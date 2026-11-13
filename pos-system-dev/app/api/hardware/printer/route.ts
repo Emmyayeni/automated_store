@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       console.error("Printer error:", printerError);
       return NextResponse.json({ 
         error: "Printer communication failed",
-        details: printerError.message 
+        details: printerError instanceof Error ? printerError.message : String(printerError),
       }, { status: 500 });
     }
 

@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     const expiryThreshold = new Date(now.getTime() + expiringDays * 24 * 60 * 60 * 1000);
 
     if (!includeExpired) {
-      conditions.push(gte(pharmacyInventory.expiryDate, now));
+      conditions.push(gte(pharmacyInventory.expiryDate, now.toISOString().slice(0, 10)));
     }
 
     const batches = await db
@@ -168,8 +168,8 @@ export async function POST(request: NextRequest) {
       .values({
         inventoryId,
         batchNumber,
-        expiryDate: new Date(expiryDate),
-        manufacturingDate: manufacturingDate ? new Date(manufacturingDate) : null,
+        expiryDate,
+        manufacturingDate: manufacturingDate || null,
         supplierBatchNumber,
         quantity: Number(quantity),
         costPrice: costPrice ? costPrice.toString() : null,

@@ -215,11 +215,11 @@ export async function POST(request: NextRequest) {
           movementType: 'STOCK_OUT',
           reason: 'SALE',
           quantity: item.quantity,
-          previousQuantity: newQty + item.quantity,
-          newQuantity: newQty,
-          referenceNumber: transactionNumber,
+          balanceBefore: newQty + item.quantity,
+          balanceAfter: newQty,
+          reference: transactionNumber,
           notes: `POS sale #${transactionNumber}`,
-          performedBy: userId,
+          userId,
         });
       } catch (error) {
         console.error(`Error adjusting inventory for product ${item.productId}:`, error);

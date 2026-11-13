@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check user permissions
-    if (!canAdjustInventory(session.user.role)) {
+    if (!canAdjustInventory(session.user.role || "")) {
       return NextResponse.json(
         { error: "Insufficient permissions. Only managers and admins can adjust inventory." },
         { status: 403 }
@@ -277,7 +277,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Check user permissions
-    if (!canAdjustInventory(session.user.role)) {
+    if (!canAdjustInventory(session.user.role || "")) {
       return NextResponse.json(
         { error: "Insufficient permissions. Only managers and admins can adjust inventory." },
         { status: 403 }

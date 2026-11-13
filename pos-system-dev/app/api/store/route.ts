@@ -4,6 +4,7 @@ import { locations, businesses } from "@/lib/schema"
 import { eq, and } from "drizzle-orm"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { auth } from "@/lib/auth"
 import { 
   createSuccessResponse, 
   createErrorResponse 

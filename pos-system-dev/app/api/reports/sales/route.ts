@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     const context = createErrorContext(request);
     
     // Validate session and require reports permission
-    const accessControl = await validatePermission('reports.sales');
+    const accessControl = await validatePermission('view_all_reports');
     if (!accessControl.hasAccess || !accessControl.user) {
       const errorResponse = accessControl.code === "AUTH_REQUIRED" 
         ? createAuthErrorResponse(accessControl.error)

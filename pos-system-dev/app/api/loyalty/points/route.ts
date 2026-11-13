@@ -5,7 +5,8 @@ import { eq, desc, sql } from "drizzle-orm";
 
 export async function POST(request: NextRequest) {
   try {
-    const { customerId, transactionId, points, transactionType, description } = await request.json();
+    const { customerId, businessId, transactionId, points, transactionType, description } = await request.json();
+    const type = transactionType === "earn" ? "earned" : transactionType === "redeem" ? "redeemed" : transactionType;
 
     // Record loyalty transaction
     const [loyaltyTransaction] = await db
@@ -13,14 +14,15 @@ export async function POST(request: NextRequest) {
       .values({
         customerId,
         transactionId,
-        transactionType,
+        businessId,
+        type,
         points,
         description,
       })
       .returning();
 
     // Update customer loyalty points
-    const multiplier = transactionType === "earn" ? 1 : -1;
+    const multiplier = type === "earned" ? 1 : -1;
     await db
       .update(customers)
       .set({
@@ -60,7 +62,7 @@ export async function GET(request: NextRequest) {
       currentPoints: customer?.loyaltyPoints || 0,
       transactions: transactions.map((t) => ({
         id: t.id,
-        transactionType: t.transactionType,
+        transactionType: t.type,
         points: t.points,
         description: t.description,
         createdAt: t.createdAt,

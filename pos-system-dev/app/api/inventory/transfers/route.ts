@@ -107,7 +107,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (status) {
-      const validStatuses = ["pending", "approved", "rejected", "shipped", "received", "cancelled"];
+      const validStatuses = ["REQUESTED", "APPROVED", "REJECTED", "IN_TRANSIT", "RECEIVED", "CANCELLED"];
       if (validStatuses.includes(status)) {
         whereClauses.push(eq(inventoryTransfers.status, status as any));
       }
@@ -125,7 +125,7 @@ export async function GET(request: NextRequest) {
         status: inventoryTransfers.status,
         requestedDate: inventoryTransfers.requestedDate,
         approvedDate: inventoryTransfers.approvedDate,
-        shippedDate: inventoryTransfers.shippedDate,
+        dispatchedDate: inventoryTransfers.dispatchedDate,
         receivedDate: inventoryTransfers.receivedDate,
         notes: inventoryTransfers.notes,
         requestedByName: users.name,
@@ -153,7 +153,7 @@ export async function GET(request: NextRequest) {
               productName: products.name,
               productSku: products.sku,
               quantityRequested: inventoryTransferItems.quantityRequested,
-              quantityShipped: inventoryTransferItems.quantityShipped,
+              quantityDispatched: inventoryTransferItems.quantityDispatched,
               quantityReceived: inventoryTransferItems.quantityReceived,
               notes: inventoryTransferItems.notes,
             })
@@ -212,14 +212,14 @@ export async function PUT(request: NextRequest) {
 
     switch (action) {
       case "approve":
-        if (transfer.status !== "pending") {
+        if (transfer.status !== "REQUESTED") {
           return NextResponse.json(
             { error: "Only pending transfers can be approved" },
             { status: 400 }
           );
         }
         updateData = {
-          status: "approved",
+          status: "APPROVED",
           approvedBy: session.user.id,
           approvedDate: new Date(),
         };
@@ -227,14 +227,14 @@ export async function PUT(request: NextRequest) {
         break;
 
       case "reject":
-        if (transfer.status !== "pending") {
+        if (transfer.status !== "REQUESTED") {
           return NextResponse.json(
             { error: "Only pending transfers can be rejected" },
             { status: 400 }
           );
         }
         updateData = {
-          status: "rejected",
+          status: "REJECTED",
           approvedBy: session.user.id,
           approvedDate: new Date(),
         };
@@ -242,7 +242,7 @@ export async function PUT(request: NextRequest) {
         break;
 
       case "ship":
-        if (transfer.status !== "approved") {
+        if (transfer.status !== "APPROVED") {
           return NextResponse.json(
             { error: "Only approved transfers can be shipped" },
             { status: 400 }
@@ -254,7 +254,7 @@ export async function PUT(request: NextRequest) {
           for (const item of items) {
             await db
               .update(inventoryTransferItems)
-              .set({ quantityShipped: item.quantityShipped })
+              .set({ quantityDispatched: item.quantityDispatched })
               .where(
                 and(
                   eq(inventoryTransferItems.transferId, transferId),
@@ -267,25 +267,25 @@ export async function PUT(request: NextRequest) {
               locationId: transfer.fromLocationId,
               productId: item.productId,
               adjustmentType: 'transfer_out',
-              adjustmentQuantity: -item.quantityShipped,
+              adjustmentQuantity: -item.quantityDispatched,
               reason: `Transfer out to location - ${transfer.transferNumber}`,
               adjustedBy: session.user.id,
               referenceId: transferId,
               referenceType: 'transfer_out',
-              notes: `Shipped ${item.quantityShipped} units`,
+              notes: `Shipped ${item.quantityDispatched} units`,
             });
           }
         }
 
         updateData = {
-          status: "shipped",
-          shippedDate: new Date(),
+          status: "IN_TRANSIT",
+          dispatchedDate: new Date(),
         };
         statusMessage = "Transfer shipped and inventory adjusted";
         break;
 
       case "receive":
-        if (transfer.status !== "shipped") {
+        if (transfer.status !== "IN_TRANSIT") {
           return NextResponse.json(
             { error: "Only shipped transfers can be received" },
             { status: 400 }
@@ -321,21 +321,21 @@ export async function PUT(request: NextRequest) {
         }
 
         updateData = {
-          status: "received",
+          status: "RECEIVED",
           receivedDate: new Date(),
         };
         statusMessage = "Transfer received and inventory adjusted";
         break;
 
       case "cancel":
-        if (!["pending", "approved"].includes(transfer.status || "")) {
+        if (!["REQUESTED", "APPROVED"].includes(transfer.status || "")) {
           return NextResponse.json(
             { error: "Only pending or approved transfers can be cancelled" },
             { status: 400 }
           );
         }
         updateData = {
-          status: "cancelled",
+          status: "CANCELLED",
         };
         statusMessage = "Transfer cancelled";
         break;

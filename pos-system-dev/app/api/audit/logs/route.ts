@@ -28,10 +28,10 @@ export async function POST(req: NextRequest) {
       resource,
       resourceId: resourceId || null,
       details: details || {},
-      ipAddress: ipAddress || req.ip,
+      ipAddress: ipAddress || req.headers.get('x-forwarded-for') || null,
       userAgent: userAgent || req.headers.get('user-agent'),
       timestamp: new Date().toISOString(),
-      sessionId: session.user.sessionId || 'unknown'
+      sessionId: 'unknown'
     };
 
     // In production, save to database
@@ -235,10 +235,10 @@ export async function DELETE(req: NextRequest) {
         deletedCount,
         reason: 'Data retention policy'
       },
-      ipAddress: req.ip,
+      ipAddress: req.headers.get('x-forwarded-for') || null,
       userAgent: req.headers.get('user-agent'),
       timestamp: new Date().toISOString(),
-      sessionId: session.user.sessionId || 'unknown'
+      sessionId: 'unknown'
     };
 
     return NextResponse.json({

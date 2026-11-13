@@ -90,12 +90,13 @@ export async function POST(req: NextRequest) {
       status: 'in-progress',
       initiatedBy: session.user.id,
       initiatedAt: timestamp,
+      completedAt: undefined as string | undefined,
       skipExisting: skipExisting || false,
       progress: {
         percentage: 0,
         currentTable: '',
-        processedTables: [],
-        errors: []
+        processedTables: [] as string[],
+        errors: [] as string[]
       },
       metadata: {
         originalBackup: mockBackup,

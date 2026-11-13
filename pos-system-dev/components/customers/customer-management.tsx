@@ -11,13 +11,13 @@ import { Search, Plus, Users, Phone, Mail, MapPin } from "lucide-react"
 import { formatDisplayDate, formatDisplayDateTime } from "@/lib/standards/formatting"
 import { CommonValidators, validateForm } from "@/lib/standards/validation"
 import { VALIDATION_MESSAGES } from "@/lib/constants/validation-messages"
-import type { Customer, FormData, FormErrors } from "@/lib/types"
+import type { Customer, FormErrors } from "@/lib/types"
 
 interface CustomerManagementProps {
   businessId: string
 }
 
-type CustomerFormData = FormData<Customer>
+type CustomerFormData = { name: string; email: string; phone: string; address: string; businessId: string }
 
 export default function CustomerManagement({ businessId }: CustomerManagementProps) {
   const [customers, setCustomers] = useState<Customer[]>([])
@@ -58,6 +58,8 @@ export default function CustomerManagement({ businessId }: CustomerManagementPro
       name: CommonValidators.name("Customer name", true),
       email: CommonValidators.email(false),
       phone: CommonValidators.phone(false),
+      address: CommonValidators.name("Address", false),
+      businessId: CommonValidators.name("Business", true),
     }
 
     return validateForm(data, validators)
@@ -121,7 +123,7 @@ export default function CustomerManagement({ businessId }: CustomerManagementPro
       email: customer.email || "",
       phone: customer.phone || "",
       address: customer.address || "",
-      businessId: customer.businessId,
+      businessId,
     })
     setShowAddCustomer(true)
   }

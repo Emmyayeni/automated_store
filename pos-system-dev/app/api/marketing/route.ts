@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     const businessId = session.user.businessId
     const body = await request.json()
 
-    if (!body.name || !body.subject || !body.segment) {
+    if (!body.name || !body.type || !body.content) {
       return NextResponse.json(
         { error: "Missing required fields: name, subject, segment" },
         { status: 400 }
@@ -48,14 +48,12 @@ export async function POST(request: NextRequest) {
       .values({
         businessId,
         name: body.name,
-        subject: body.subject,
-        content: body.content ?? "",
-        segment: body.segment,
+        type: body.type,
+        content: body.content,
+        targetAudience: body.segment ? { segment: body.segment } : null,
         status: body.scheduledDate ? "scheduled" : "draft",
-        scheduledDate: body.scheduledDate ? new Date(body.scheduledDate) : null,
-        recipients: body.recipients ?? 0,
-        openRate: 0,
-        clickRate: 0,
+        startDate: body.scheduledDate ? new Date(body.scheduledDate) : null,
+        createdBy: session.user.id,
       })
       .returning()
 
@@ -83,14 +81,10 @@ export async function PUT(request: NextRequest) {
       .update(campaigns)
       .set({
         name: body.name,
-        subject: body.subject,
         content: body.content,
-        segment: body.segment,
+        targetAudience: body.segment ? { segment: body.segment } : undefined,
         status: body.status,
-        scheduledDate: body.scheduledDate ? new Date(body.scheduledDate) : null,
-        recipients: body.recipients,
-        openRate: body.openRate,
-        clickRate: body.clickRate,
+        startDate: body.scheduledDate ? new Date(body.scheduledDate) : null,
       })
       .where(and(eq(campaigns.id, body.id), eq(campaigns.businessId, businessId)))
       .returning()

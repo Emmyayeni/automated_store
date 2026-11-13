@@ -90,6 +90,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const [refund] = await db
       .insert(transactions)
       .values({
+        businessId: transaction.businessId,
         transactionNumber: refundTransactionNumber,
         locationId: transaction.locationId,
         cashierId: validation.user.id,
@@ -101,7 +102,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         status: "refunded",
         notes: `Refund for transaction ${transaction.transactionNumber}. Reason: ${reason || 'No reason provided'}`,
         createdAt: new Date(),
-        updatedAt: new Date(),
       })
       .returning();
 
@@ -148,9 +148,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .update(transactions)
       .set({ 
         status: "refunded",
-        updatedAt: new Date()
       })
-      .where(eq(transactions.id, params.id));
+      .where(eq(transactions.id, transactionId));
 
     const responseData = {
       refund: {

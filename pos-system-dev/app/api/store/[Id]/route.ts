@@ -22,7 +22,7 @@ export async function GET(
     // Check if storeId is a valid UUID format (8-4-4-4-12)
     const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(storeId)
 
-    let store = []
+    let store: (typeof locations.$inferSelect)[] = []
     if (isValidUUID) {
       store = await db
         .select()

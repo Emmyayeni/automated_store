@@ -109,7 +109,7 @@ export default function AdminInventoryManagement() {
       const inventoryData = data.success ? data.data : data
       setInventory(Array.isArray(inventoryData) ? inventoryData : [])
     } catch (error) {
-      const errorResponse = handleApiError(error, 'fetch inventory')
+      const errorResponse = { error: error instanceof Error ? error.message : "Request failed" }
       console.error('Error fetching inventory:', error)
       toast.error(errorResponse.error || 'Failed to fetch inventory')
     } finally {
@@ -133,7 +133,7 @@ export default function AdminInventoryManagement() {
       const locationsData = data.success ? data.data : data
       setLocations(Array.isArray(locationsData) ? locationsData : [])
     } catch (error) {
-      const errorResponse = handleApiError(error, 'fetch locations')
+      const errorResponse = { error: error instanceof Error ? error.message : "Request failed" }
       console.error('Error fetching locations:', error)
       toast.error(errorResponse.error || 'Failed to fetch locations')
     }
@@ -212,7 +212,7 @@ export default function AdminInventoryManagement() {
       await fetchAdjustmentHistory()
 
     } catch (error) {
-      const errorResponse = handleApiError(error, 'inventory adjustment')
+      const errorResponse = { error: error instanceof Error ? error.message : "Request failed" }
       console.error('Error adjusting inventory:', error)
       toast.error(errorResponse.error || 'Failed to adjust inventory')
     } finally {

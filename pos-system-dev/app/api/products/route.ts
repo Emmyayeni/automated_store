@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { products, inventory, locations } from "@/lib/schema";
+import { products, inventory, locations, businesses } from "@/lib/schema";
 import { eq, and, sql as dsql } from "drizzle-orm";
 import { generateSKU, generateBarcode, validateBarcode } from "@/lib/sku-generator";
 import { 
@@ -291,7 +291,7 @@ export async function POST(request: NextRequest) {
     let barcode = body.barcode;
     if (barcode) {
       // Validate and format existing barcode
-      const barcodeValidation = validateBarcode(barcode);
+      const barcodeValidation = validateBarcode(barcode ?? "");
       if (!barcodeValidation.isValid) {
         const validationErrors = [{
           field: "barcode",
@@ -344,7 +344,6 @@ export async function POST(request: NextRequest) {
         barcode: barcode ?? "",
         sku: sku,
         isActive: true,
-        createdAt: new Date(),
         updatedAt: new Date(),
       })
       .returning();
@@ -358,7 +357,6 @@ export async function POST(request: NextRequest) {
       maxStockLevel: body.maxStockLevel ?? 100,
       costPrice: body.cost ? body.cost.toString() : null,
       sellPrice: body.price.toString(),
-      createdAt: new Date(),
       updatedAt: new Date(),
     }).returning();
 
@@ -382,7 +380,7 @@ export async function POST(request: NextRequest) {
         minStockLevel: inventoryRecord.minStockLevel,
         maxStockLevel: inventoryRecord.maxStockLevel,
         costPrice: inventoryRecord.costPrice ? formatPrice(parseFloat(inventoryRecord.costPrice)) : null,
-        sellPrice: formatPrice(parseFloat(inventoryRecord.sellPrice)),
+        sellPrice: inventoryRecord.sellPrice ? formatPrice(parseFloat(inventoryRecord.sellPrice)) : null,
       },
       message: "Product created successfully"
     };

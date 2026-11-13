@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (action === 'clock_out' && !mockCurrentShift) {
+    if (action !== 'clock_in' && !mockCurrentShift) {
       throw new ValidationError(
         "Not currently clocked in. Please clock in first.",
         "action", 
@@ -131,14 +131,14 @@ export async function POST(request: NextRequest) {
         break
 
       case 'clock_out':
-        const clockInTime = new Date(mockCurrentShift.clockIn)
+        const clockInTime = new Date(mockCurrentShift!.clockIn)
         const totalHours = (now.getTime() - clockInTime.getTime()) / (1000 * 60 * 60)
         
         timeEntry = {
-          id: mockCurrentShift.id,
+          id: mockCurrentShift!.id,
           staffId: staff.id,
           staffName: staff.name,
-          clockIn: mockCurrentShift.clockIn,
+          clockIn: mockCurrentShift!.clockIn,
           clockOut: currentTime,
           status: 'completed',
           location: location || 'Main Store',
@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
 
       case 'break_start':
         timeEntry = {
-          id: mockCurrentShift.id,
+          id: mockCurrentShift!.id,
           action: 'break_start',
           breakStartTime: currentTime,
           breakType: 'regular',
@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
         const breakDuration = (now.getTime() - breakStartTime.getTime()) / (1000 * 60)
         
         timeEntry = {
-          id: mockCurrentShift.id,
+          id: mockCurrentShift!.id,
           action: 'break_end',
           breakEndTime: currentTime,
           breakDuration: Math.round(breakDuration),

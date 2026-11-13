@@ -132,7 +132,7 @@ export default function ProductsTable({ locationId }: ProductsTableProps) {
                     <td className="px-2 py-2">{p.barcode}</td>
                     <td className="px-2 py-2 text-right">{formatPrice(p.price)}</td>
                     <td className="px-2 py-2 text-right">{p.stockQuantity}</td>
-                    <td className="px-2 py-2">{p.category?.name ?? "-"}</td>
+                    <td className="px-2 py-2">{p.category ?? "-"}</td>
                     <td className="px-2 py-2">
                       {p.isActive ? (
                         <span className="text-green-600 font-medium">Active</span>

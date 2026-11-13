@@ -1,11 +1,8 @@
 import type React from "react";
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import SessionWrapper from "./sessionWrapper";
-
-const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "StockFlow | Automated Inventory Control System for Multi-Branch Supermarket",
@@ -86,7 +83,7 @@ export default function RootLayout({
         {/* Disable zoom on mobile for better UX */}
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
       </head>
-      <body className={inter.className}>
+      <body>
         <SessionWrapper>
           { children}
         </SessionWrapper>

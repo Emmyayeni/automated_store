@@ -1,7 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { promotions, storeLocations } from "@/lib/schema";
-import { eq, or, and, desc, sql as dsql } from "drizzle-orm";
+import { promotions } from "@/lib/schema";
+import { eq, and, desc, sql as dsql } from "drizzle-orm";
+import { auth } from "@/lib/auth";
 import { 
   createSuccessResponse, 
   createErrorResponse 
@@ -12,18 +13,16 @@ export async function POST(request: NextRequest) {
     const {
       name,
       description,
-      promotionType,
-      discountValue,
-      minPurchaseAmount,
-      maxDiscountAmount,
-      buyQuantity,
-      getQuantity,
+      type,
+      value,
+      minimumPurchase,
+      maximumDiscount,
       applicableProducts,
-      applicableCategories,
       startDate,
       endDate,
       usageLimit,
-      locationId,
+      businessId,
+      createdBy,
     } = await request.json();
 
     const [promotion] = await db
@@ -31,18 +30,16 @@ export async function POST(request: NextRequest) {
       .values({
         name,
         description,
-        promotionType,
-        discountValue,
-        minPurchaseAmount,
-        maxDiscountAmount,
-        buyQuantity,
-        getQuantity,
+        businessId,
+        type,
+        value,
+        minimumPurchase,
+        maximumDiscount,
         applicableProducts: JSON.stringify(applicableProducts),
-        applicableCategories: JSON.stringify(applicableCategories),
-        startDate,
-        endDate,
+        validFrom: startDate,
+        validUntil: endDate,
         usageLimit,
-        locationId,
+        createdBy: createdBy ?? (await auth())?.user?.id,
       })
       .returning();
 
@@ -56,26 +53,19 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const locationId = searchParams.get("locationId");
+    const businessId = searchParams.get("businessId");
     const active = searchParams.get("active") === "true";
 
     let whereClauses: any[] = [];
 
-    if (locationId) {
-      whereClauses.push(
-        or(
-          eq(promotions.locationId, locationId),
-          eq(promotions.locationId, null)
-        )
-      );
-    }
+    if (businessId) whereClauses.push(eq(promotions.businessId, businessId));
 
     if (active) {
       whereClauses.push(
         and(
           eq(promotions.isActive, true),
-          dsql`${promotions.startDate} <= CURRENT_TIMESTAMP`,
-          dsql`${promotions.endDate} >= CURRENT_TIMESTAMP`
+          dsql`${promotions.validFrom} <= CURRENT_TIMESTAMP`,
+          dsql`${promotions.validUntil} >= CURRENT_TIMESTAMP`
         )
       );
     }
@@ -85,24 +75,18 @@ export async function GET(request: NextRequest) {
         id: promotions.id,
         name: promotions.name,
         description: promotions.description,
-        promotionType: promotions.promotionType,
-        discountValue: promotions.discountValue,
-        minPurchaseAmount: promotions.minPurchaseAmount,
-        maxDiscountAmount: promotions.maxDiscountAmount,
-        buyQuantity: promotions.buyQuantity,
-        getQuantity: promotions.getQuantity,
+        type: promotions.type,
+        value: promotions.value,
+        minimumPurchase: promotions.minimumPurchase,
+        maximumDiscount: promotions.maximumDiscount,
         applicableProducts: promotions.applicableProducts,
-        applicableCategories: promotions.applicableCategories,
-        startDate: promotions.startDate,
-        endDate: promotions.endDate,
+        validFrom: promotions.validFrom,
+        validUntil: promotions.validUntil,
         usageLimit: promotions.usageLimit,
         usageCount: promotions.usageCount,
         isActive: promotions.isActive,
-        locationId: promotions.locationId,
-        locationName: storeLocations.name,
       })
       .from(promotions)
-      .leftJoin(storeLocations, eq(promotions.locationId, storeLocations.id))
       .where(whereClauses.length ? and(...whereClauses) : undefined)
       .orderBy(desc(promotions.createdAt));
 
@@ -110,21 +94,16 @@ export async function GET(request: NextRequest) {
       id: promo.id,
       name: promo.name,
       description: promo.description,
-      promotionType: promo.promotionType,
-      discountValue: promo.discountValue ? Number.parseFloat(promo.discountValue as any) : null,
-      minPurchaseAmount: promo.minPurchaseAmount ? Number.parseFloat(promo.minPurchaseAmount as any) : null,
-      maxDiscountAmount: promo.maxDiscountAmount ? Number.parseFloat(promo.maxDiscountAmount as any) : null,
-      buyQuantity: promo.buyQuantity,
-      getQuantity: promo.getQuantity,
+      type: promo.type,
+      value: promo.value ? Number.parseFloat(promo.value as any) : null,
+      minimumPurchase: promo.minimumPurchase ? Number.parseFloat(promo.minimumPurchase as any) : null,
+      maximumDiscount: promo.maximumDiscount ? Number.parseFloat(promo.maximumDiscount as any) : null,
       applicableProducts: promo.applicableProducts,
-      applicableCategories: promo.applicableCategories,
-      startDate: promo.startDate,
-      endDate: promo.endDate,
+      validFrom: promo.validFrom,
+      validUntil: promo.validUntil,
       usageLimit: promo.usageLimit,
       usageCount: promo.usageCount,
       isActive: promo.isActive,
-      locationId: promo.locationId,
-      locationName: promo.locationName,
     }));
 
     return NextResponse.json(createSuccessResponse(formattedPromotions));

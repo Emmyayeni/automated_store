@@ -31,12 +31,11 @@ async function syncTransactions(data: any) {
     .select({
       id: transactions.id,
       transactionNumber: transactions.transactionNumber,
-      totalAmount: transactions.totalAmount,
+      totalAmount: transactions.total,
       createdAt: transactions.createdAt,
       status: transactions.status,
       customerId: transactions.customerId,
-      firstName: customers.firstName,
-      lastName: customers.lastName,
+      customerName: customers.name,
       email: customers.email,
     })
     .from(transactions)
@@ -58,8 +57,8 @@ async function syncTransactions(data: any) {
       id: `qb_${transaction.id}`,
       amount: Number.parseFloat(transaction.totalAmount as any),
       date: transaction.createdAt,
-      customer: transaction.firstName
-        ? `${transaction.firstName} ${transaction.lastName}`
+      customer: transaction.customerName
+        ? transaction.customerName
         : "Walk-in Customer",
       reference: transaction.transactionNumber,
     };
@@ -75,15 +74,15 @@ async function syncTransactions(data: any) {
     const [integration] = await db
       .select({ id: integrationConfigs.id })
       .from(integrationConfigs)
-      .where(eq(integrationConfigs.integrationName, "quickbooks"))
+      .where(eq(integrationConfigs.integrationType, "quickbooks"))
       .limit(1);
 
     if (integration) {
       await db.insert(syncLogs).values({
-        integrationId: integration.id,
-        syncType: "transaction",
+        integrationConfigId: integration.id,
+        syncType: "manual",
         recordsProcessed: 1,
-        status: "success",
+        status: "completed",
       });
     }
   }
@@ -108,7 +107,7 @@ async function syncCustomers(data: any) {
   const syncResults = custs.map((customer: typeof customers.$inferSelect) => ({
     posCustomerId: customer.id,
     qbCustomerId: `qb_cust_${customer.id}`,
-    name: `${customer.firstName || ""} ${customer.lastName || ""}`.trim(),
+    name: customer.name || "",
     email: customer.email,
     status: "synced",
   }));

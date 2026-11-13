@@ -64,9 +64,9 @@ export async function POST(request: NextRequest) {
     const userData = {
       id: user.id,
       email: user.email,
-      name: user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+      name: user.name || user.email,
       role: normalizedRole,
-      isActive: user.isActive,
+      isActive: true,
       businessId: user.businessId,
       locationId: user.locationId,
     };

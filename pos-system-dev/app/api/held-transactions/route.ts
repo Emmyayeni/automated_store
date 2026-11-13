@@ -48,10 +48,8 @@ export async function GET(request: NextRequest) {
         totalAmount: heldTransactions.totalAmount,
         holdReason: heldTransactions.holdReason,
         createdAt: heldTransactions.createdAt,
-        userFirstName: users.firstName,
-        userLastName: users.lastName,
-        customerFirstName: customers.firstName,
-        customerLastName: customers.lastName,
+        userName: users.name,
+        customerName: customers.name,
       })
       .from(heldTransactions)
       .leftJoin(users, eq(heldTransactions.userId, users.id))

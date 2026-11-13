@@ -159,7 +159,7 @@ export async function GET(req: NextRequest) {
 
       case 'roles':
         // Get all roles
-        if (!['admin', 'manager'].includes(session.user.role)) {
+        if (!['admin', 'manager'].includes(session.user.role || '')) {
           return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
         }
 
@@ -182,13 +182,13 @@ export async function GET(req: NextRequest) {
 
       case 'user-permissions':
         // Get permissions for a specific user
-        if (userId && userId !== session.user.id && !['admin', 'manager'].includes(session.user.role)) {
+        if (userId && userId !== session.user.id && !['admin', 'manager'].includes(session.user.role || '')) {
           return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
         }
 
         const targetUserId = userId || session.user.id;
-        const userRole = session.user.role;
-        const userPermissions = DEFAULT_ROLES[userRole]?.permissions || [];
+        const userRole = (session.user.role || 'admin') as keyof typeof DEFAULT_ROLES;
+        const userPermissions: string[] = DEFAULT_ROLES[userRole]?.permissions || [];
 
         return NextResponse.json({
           userId: targetUserId,
@@ -215,7 +215,8 @@ export async function GET(req: NextRequest) {
           );
         }
 
-        const hasPermission = DEFAULT_ROLES[session.user.role]?.permissions.includes(permission) || false;
+        const roleKey = (session.user.role || 'admin') as keyof typeof DEFAULT_ROLES;
+        const hasPermission = DEFAULT_ROLES[roleKey]?.permissions.includes(permission) || false;
         
         return NextResponse.json({
           permission,

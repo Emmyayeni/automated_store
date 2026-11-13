@@ -9,8 +9,8 @@ export interface User {
   isActive: boolean
   businessId?: string
   locationId?: string
-  createdAt: Date
-  updatedAt: Date
+  createdAt?: Date
+  updatedAt?: Date
 }
 
 // Enums for pharmacy and medical equipment
@@ -28,11 +28,12 @@ export interface Product {
   price: number
   cost?: number
   categoryId?: string
-  stockQuantity: number
-  lowStockThreshold: number
-  isActive: boolean
+  stockQuantity?: number
+  lowStockThreshold?: number
+  isActive?: boolean
   imageUrl?: string
-  category?: Category
+  category?: string
+  status?: string
   
   // Pharmacy-specific fields (optional)
   drugType?: DrugType
@@ -76,8 +77,8 @@ export interface Product {
   certificationNumber?: string
   specialHandling?: string
   
-  createdAt: Date
-  updatedAt: Date
+  createdAt?: Date
+  updatedAt?: Date
   
   // Legacy fields for backward compatibility
   stock?: any // Deprecated - use stockQuantity instead
@@ -106,11 +107,20 @@ export interface Category {
 
 export interface Customer {
   id: string
-  name?: string  // Changed from firstName/lastName to match schema
+  businessId?: string
+  name: string  // Changed from firstName/lastName to match schema
   email?: string
   phone?: string
+  address?: string
+  isActive?: boolean
+  createdAt?: Date | string
   loyaltyPoints: number
+  currentPoints?: number
+  transactions?: Array<{ id: string; points: number; type?: string; createdAt?: Date }>
 }
+
+export type FormData<T extends object = Record<string, string | number | boolean | undefined>> = T
+export type FormErrors<T extends object = Record<string, unknown>> = Partial<Record<keyof T, string>>
 
 export interface Transaction {
   id: string

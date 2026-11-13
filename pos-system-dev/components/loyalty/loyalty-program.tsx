@@ -71,8 +71,10 @@ export default function LoyaltyProgram({ customerId }: LoyaltyProgramProps) {
     return { name: "Bronze", color: "bg-orange-100 text-orange-800", multiplier: "1x" }
   }
 
+  const currentPoints = customerData?.currentPoints ?? customerData?.loyaltyPoints ?? 0
+
   const redeemReward = async (rewardId: string, pointsRequired: number) => {
-    if (!customerData || customerData.currentPoints < pointsRequired) return
+    if (!customerData || currentPoints < pointsRequired) return
 
     try {
       const response = await fetch("/api/loyalty/points", {
@@ -132,30 +134,30 @@ export default function LoyaltyProgram({ customerId }: LoyaltyProgramProps) {
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <div>
-                    <p className="text-2xl font-bold">{customerData.currentPoints}</p>
+                    <p className="text-2xl font-bold">{currentPoints}</p>
                     <p className="text-sm text-gray-500">Available Points</p>
                   </div>
-                  <Badge className={getTierInfo(customerData.currentPoints).color}>
+                  <Badge className={getTierInfo(currentPoints).color}>
                     <Award className="h-3 w-3 mr-1" />
-                    {getTierInfo(customerData.currentPoints).name}
+                    {getTierInfo(currentPoints).name}
                   </Badge>
                 </div>
 
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Points Multiplier:</span>
-                    <span className="font-medium">{getTierInfo(customerData.currentPoints).multiplier}</span>
+                    <span className="font-medium">{getTierInfo(currentPoints).multiplier}</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
                       className="bg-blue-600 h-2 rounded-full"
                       style={{
-                        width: `${Math.min((customerData.currentPoints % 500) / 5, 100)}%`,
+                        width: `${Math.min((currentPoints % 500) / 5, 100)}%`,
                       }}
                     ></div>
                   </div>
                   <p className="text-xs text-gray-500">
-                    {500 - (customerData.currentPoints % 500)} points to next tier
+                    {500 - (currentPoints % 500)} points to next tier
                   </p>
                 </div>
               </div>
@@ -180,7 +182,7 @@ export default function LoyaltyProgram({ customerId }: LoyaltyProgramProps) {
                     </div>
                     <Button
                       size="sm"
-                      disabled={customerData.currentPoints < reward.pointsRequired}
+                      disabled={currentPoints < reward.pointsRequired}
                       onClick={() => redeemReward(reward.id, reward.pointsRequired)}
                     >
                       Redeem

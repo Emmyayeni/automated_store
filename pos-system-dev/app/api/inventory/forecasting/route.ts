@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     const context = createErrorContext(request);
     
     // Validate session and require inventory forecasting permission
-    const accessControl = await validatePermission('inventory.forecasting');
+    const accessControl = await validatePermission('view_all_inventory');
     if (!accessControl.hasAccess || !accessControl.user) {
       const errorResponse = accessControl.code === "AUTH_REQUIRED" 
         ? createAuthErrorResponse(accessControl.error)
@@ -145,8 +145,8 @@ export async function GET(request: NextRequest) {
       // Simple linear trend calculation
       let trend = 'stable';
       if (dailySales.length >= 7) {
-        const recent = dailySales.slice(-7).reduce((sum, day) => sum + day.quantity, 0) / 7;
-        const earlier = dailySales.slice(0, 7).reduce((sum, day) => sum + day.quantity, 0) / 7;
+        const recent = dailySales.slice(-7).reduce((sum: number, day: { quantity: number }) => sum + day.quantity, 0) / 7;
+        const earlier = dailySales.slice(0, 7).reduce((sum: number, day: { quantity: number }) => sum + day.quantity, 0) / 7;
         
         if (recent > earlier * 1.1) trend = 'increasing';
         else if (recent < earlier * 0.9) trend = 'decreasing';
@@ -236,7 +236,7 @@ export async function POST(request: NextRequest) {
     const context = createErrorContext(request);
     
     // Validate session and require inventory forecasting permission
-    const accessControl = await validatePermission('inventory.forecasting');
+    const accessControl = await validatePermission('view_all_inventory');
     if (!accessControl.hasAccess || !accessControl.user) {
       const errorResponse = accessControl.code === "AUTH_REQUIRED" 
         ? createAuthErrorResponse(accessControl.error)

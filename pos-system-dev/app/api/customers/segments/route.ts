@@ -249,21 +249,11 @@ async function updateSegmentMembers(segmentId: string, criteria: any) {
     }
 
     // Get customers matching criteria
-    let query = db
+    const matchingCustomers = await db
       .select({ id: customers.id })
-      .from(customers);
-
-    if (conditions.length > 0) {
-      const operator = criteria.operator || 'AND';
-      if (operator === 'AND') {
-        query = query.where(and(...conditions));
-      } else {
-        // For OR conditions, we'd need a different approach
-        query = query.where(conditions[0]); // Simplified for now
-      }
-    }
-
-    const matchingCustomers = await query.limit(10000);
+      .from(customers)
+      .where(conditions.length > 0 ? (criteria.operator === 'AND' ? and(...conditions) : conditions[0]) : undefined)
+      .limit(10000);
 
     // Add customers to segment
     if (matchingCustomers.length > 0) {

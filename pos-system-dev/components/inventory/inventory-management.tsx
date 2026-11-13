@@ -106,7 +106,7 @@ export default function InventoryManagement({ locationId }: { locationId: string
       const historyData = data.success ? data.data : data
       setAdjustmentHistory(Array.isArray(historyData) ? historyData : [])
     } catch (error) {
-      const errorResponse = handleApiError(error, 'fetch adjustment history')
+      const errorResponse = { error: error instanceof Error ? error.message : "Request failed" }
       console.error('Error fetching adjustment history:', error)
       toast.error(errorResponse.error || 'Failed to fetch adjustment history')
     }
@@ -174,7 +174,7 @@ export default function InventoryManagement({ locationId }: { locationId: string
       await fetchAdjustmentHistory()
 
     } catch (error) {
-      const errorResponse = handleApiError(error, 'inventory adjustment')
+      const errorResponse = { error: error instanceof Error ? error.message : "Request failed" }
       console.error('Error adjusting inventory:', error)
       toast.error(errorResponse.error || 'Failed to adjust inventory')
     } finally {

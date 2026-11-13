@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     const context = createErrorContext(req);
     
     // Validate session and require dashboard permission
-    const accessControl = await validatePermission('dashboard.view');
+    const accessControl = await validatePermission('view_dashboard');
     if (!accessControl.hasAccess || !accessControl.user) {
       const errorResponse = accessControl.code === "AUTH_REQUIRED" 
         ? createAuthErrorResponse(accessControl.error)

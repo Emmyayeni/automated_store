@@ -39,10 +39,10 @@ export async function POST(request: NextRequest) {
           // Conflict detected
           await db.insert(offlineTransactions).values({
             deviceId,
-            locationId: offlineTransaction.locationId,
+            businessId: offlineTransaction.businessId,
+            localTransactionId: offlineTransaction.transactionNumber,
             transactionData: JSON.stringify(offlineTransaction),
-            createdOfflineAt: offlineTransaction.createdAt,
-            syncStatus: "conflict",
+            status: "conflict",
             errorMessage: "Transaction already exists",
           });
           syncResults.conflicts++;
@@ -55,13 +55,15 @@ export async function POST(request: NextRequest) {
           .values({
             transactionNumber: offlineTransaction.transactionNumber,
             customerId: offlineTransaction.customerId,
-            userId: offlineTransaction.userId,
+            businessId: offlineTransaction.businessId,
+            locationId: offlineTransaction.locationId,
+            cashierId: offlineTransaction.userId,
             subtotal: offlineTransaction.subtotal,
             taxAmount: offlineTransaction.taxAmount,
-            totalAmount: offlineTransaction.totalAmount,
+            total: offlineTransaction.totalAmount,
             paymentMethod: offlineTransaction.paymentMethod,
             status: "completed",
-            createdAt: offlineTransaction.createdAt,
+            itemCount: offlineTransaction.items.length,
           })
           .returning({ id: transactions.id });
 
@@ -72,14 +74,14 @@ export async function POST(request: NextRequest) {
             productId: item.productId,
             quantity: item.quantity,
             unitPrice: item.unitPrice,
-            totalPrice: item.totalPrice,
+            lineTotal: item.totalPrice,
           });
 
           // Update inventory
           await db
             .update(products)
             .set({
-              stockQuantity: dsql`${products.stockQuantity} - ${item.quantity}`,
+              stockLevel: dsql`${products.stockLevel} - ${item.quantity}`,
             })
             .where(eq(products.id, item.productId));
         }
@@ -87,10 +89,10 @@ export async function POST(request: NextRequest) {
         // Mark as synced
         await db.insert(offlineTransactions).values({
           deviceId,
-          locationId: offlineTransaction.locationId,
+          businessId: offlineTransaction.businessId,
+          localTransactionId: offlineTransaction.transactionNumber,
           transactionData: JSON.stringify(offlineTransaction),
-          createdOfflineAt: offlineTransaction.createdAt,
-          syncStatus: "synced",
+          status: "synced",
         });
 
         syncResults.processed++;
@@ -99,20 +101,20 @@ export async function POST(request: NextRequest) {
           console.error("Error processing offline transaction:", error);
           await db.insert(offlineTransactions).values({
             deviceId,
-            locationId: offlineTransaction.locationId,
+            businessId: offlineTransaction.businessId,
+            localTransactionId: offlineTransaction.transactionNumber,
             transactionData: JSON.stringify(offlineTransaction),
-            createdOfflineAt: offlineTransaction.createdAt,
-            syncStatus: "failed",
+            status: "failed",
             errorMessage: error.message,
           });
         } else {
           console.error("Error processing offline transaction:", error);
           await db.insert(offlineTransactions).values({
             deviceId,
-            locationId: offlineTransaction.locationId,
+            businessId: offlineTransaction.businessId,
+            localTransactionId: offlineTransaction.transactionNumber,
             transactionData: JSON.stringify(offlineTransaction),
-            createdOfflineAt: offlineTransaction.createdAt,
-            syncStatus: "failed",
+            status: "failed",
             errorMessage: String(error),
           });
         }
@@ -145,7 +147,7 @@ export async function POST(request: NextRequest) {
     // Update device last seen
     await db
       .update(mobileDevices)
-      .set({ lastSeen: new Date() })
+      .set({ lastSyncAt: new Date() })
       .where(eq(mobileDevices.deviceId, deviceId));
 
     return NextResponse.json({

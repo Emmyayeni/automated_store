@@ -17,17 +17,17 @@ export async function GET(request: NextRequest) {
         id: stockAlerts.id,
         productId: stockAlerts.productId,
         alertType: stockAlerts.alertType,
-        currentStock: stockAlerts.currentStock,
+        currentStock: stockAlerts.currentValue,
         threshold: stockAlerts.threshold,
-        isResolved: stockAlerts.isResolved,
+        isResolved: stockAlerts.isAcknowledged,
         createdAt: stockAlerts.createdAt,
-        resolvedAt: stockAlerts.resolvedAt,
+        resolvedAt: stockAlerts.acknowledgedAt,
         productName: products.name,
         sku: products.sku,
       })
       .from(stockAlerts)
-      .join(products, eq(stockAlerts.productId, products.id))
-      .where(eq(stockAlerts.isResolved, resolved))
+      .innerJoin(products, eq(stockAlerts.productId, products.id))
+      .where(eq(stockAlerts.isAcknowledged, resolved))
       .orderBy(desc(stockAlerts.createdAt));
 
     const formattedAlerts = alerts.map((alert) => ({
@@ -57,8 +57,8 @@ export async function PATCH(request: NextRequest) {
     const [alert] = await db
       .update(stockAlerts)
       .set({
-        isResolved: resolved,
-        resolvedAt: resolved ? new Date() : null,
+        isAcknowledged: resolved,
+        acknowledgedAt: resolved ? new Date() : null,
       })
       .where(eq(stockAlerts.id, alertId))
       .returning();

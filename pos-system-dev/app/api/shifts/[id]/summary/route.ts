@@ -17,8 +17,8 @@ export async function GET(
         id: shifts.id,
         userId: shifts.userId,
         locationId: shifts.locationId,
-        openedAt: shifts.openedAt,
-        closedAt: shifts.closedAt,
+        openedAt: shifts.startTime,
+        closedAt: shifts.endTime,
         openingCash: shifts.openingCash,
         closingCash: shifts.closingCash,
         status: shifts.status,
@@ -104,7 +104,7 @@ export async function GET(
 
     // Calculate cash variance if shift is closed
     let cashVariance = null;
-    if (shift.status === 'closed' && shift.openingCash && shift.closingCash) {
+    if (shift.status === 'completed' && shift.openingCash && shift.closingCash) {
       const cashSales = paymentBreakdown.find(p => p.paymentMethod === 'cash')?.total || 0;
       const expectedCash = Number(shift.openingCash) + cashSales;
       cashVariance = Number(shift.closingCash) - expectedCash;

@@ -58,7 +58,7 @@ export default function ProductsPage() {
   }, [])
   const { data: session } = useSession()
   const { canAddProducts, canEditProducts, canDeleteProducts, canRegisterProducts } = usePermissions()
-  const sessionData = session?.data || session;
+  const sessionData = (session as any)?.data || session;
   const businessId = sessionData?.user?.businessId
   const locationId = sessionData?.user?.locationId // <-- Make sure this exists in your session!
   const [newProduct, setNewProduct] = useState({
@@ -109,7 +109,7 @@ export default function ProductsPage() {
     const matchesSearch =
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.barcode.toLowerCase().includes(searchTerm.toLowerCase())
+      (product.barcode ?? "").toLowerCase().includes(searchTerm.toLowerCase())
     const matchesCategory = categoryFilter === "all" || product.category === categoryFilter
     return matchesSearch && matchesCategory
   })
@@ -454,7 +454,7 @@ export default function ProductsPage() {
                         type="number"
                         step="50"
                         value={editProduct.price}
-                        onChange={e => setEditProduct({ ...editProduct, price: e.target.value })}
+                        onChange={e => setEditProduct({ ...editProduct, price: Number(e.target.value) })}
                       />
                     </div>
                     <div className="space-y-2">
@@ -464,7 +464,7 @@ export default function ProductsPage() {
                         type="number"
                         step="50"
                         value={editProduct.cost}
-                        onChange={e => setEditProduct({ ...editProduct, cost: e.target.value })}
+                        onChange={e => setEditProduct({ ...editProduct, cost: Number(e.target.value) })}
                       />
                     </div>
                     <div className="space-y-2">
@@ -580,7 +580,7 @@ export default function ProductsPage() {
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
                 {categories.map((category) => (
-                  <SelectItem key={category} value={category}>
+                  <SelectItem key={category || "uncategorized"} value={category || "uncategorized"}>
                     {category}
                   </SelectItem>
                 ))}
