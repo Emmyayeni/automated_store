@@ -8,30 +8,6 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  async rewrites() {
-    return [
-      // POS subdomain rewrites
-      {
-        source: '/pos/:path*',
-        destination: '/pos/:path*',
-      },
-      // Admin subdomain rewrites
-      {
-        source: '/admin/:path*',
-        destination: '/admin/:path*',
-      },
-      // Manager subdomain rewrites
-      {
-        source: '/manager/:path*',
-        destination: '/manager/:path*',
-      },
-      // Cashier subdomain rewrites
-      {
-        source: '/cashier/:path*',
-        destination: '/cashier/:path*',
-      },
-    ];
-  },
 }
 
 // PWA Configuration
