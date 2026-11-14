@@ -1,5 +1,6 @@
-import { drizzle } from "drizzle-orm/neon-http"
+import { drizzle } from "drizzle-orm/node-postgres"
 import { neon, neonConfig } from "@neondatabase/serverless"
+import { Pool } from "pg"
 import { config } from "dotenv"
 import { promises as dns } from "node:dns"
 import https from "node:https"
@@ -73,7 +74,12 @@ async function fetchThroughIpv4(input: RequestInfo | URL, init?: RequestInit): P
 neonConfig.fetchFunction = fetchThroughIpv4
 
 const sql = neon(process.env.DATABASE_URL)
-export const db = drizzle(sql)
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+})
+
+export const db = drizzle(pool)
 
 // For legacy compatibility - migrate to use db instead
 export { sql }

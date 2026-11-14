@@ -132,6 +132,12 @@ export default function TransfersPage() {
     loadFormOptions()
   }, [])
 
+  useEffect(() => {
+    if (userRole !== "ADMIN" && user?.locationId && branches.some((branch) => branch.id === user.locationId)) {
+      setSourceId(user.locationId)
+    }
+  }, [branches, user?.locationId, userRole])
+
   // Action handlers
   const handleApprove = async (id: string) => {
     try {
@@ -212,8 +218,8 @@ export default function TransfersPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          sourceLocationId: sourceId,
-          destinationLocationId: destId,
+          fromLocationId: sourceId,
+          toLocationId: destId,
           items: validItems,
           notes: transferNotes,
         }),
@@ -225,7 +231,7 @@ export default function TransfersPage() {
         return
       }
 
-      toast.success(`Transfer ${json.transferNumber || "request"} created successfully`)
+      toast.success(`Transfer ${json.data?.transferNumber || "request"} created successfully`)
       setCreateOpen(false)
       setSourceId("")
       setDestId("")
@@ -545,11 +551,13 @@ export default function TransfersPage() {
                   className="w-full text-xs font-semibold bg-white border border-slate-300 rounded-lg p-2 text-slate-800"
                 >
                   <option value="">Select source branch...</option>
-                  {branches.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name}
-                    </option>
-                  ))}
+                  {branches
+                    .filter((b) => userRole === "ADMIN" || !user?.locationId || b.id === user.locationId)
+                    .map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.name}
+                      </option>
+                    ))}
                 </select>
               </div>
 
