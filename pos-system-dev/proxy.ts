@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { ROLE_DASHBOARD_PATH } from "./lib/roles";
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   // Handle OPTIONS requests immediately
   if (req.method === 'OPTIONS') {
     return new NextResponse(null, { 
@@ -31,7 +31,11 @@ export async function middleware(req: NextRequest) {
   }
 
   // Get the token to check authentication and role
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+  const token = await getToken({
+    req,
+    secret: process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET,
+    secureCookie: req.nextUrl.protocol === "https:",
+  });
 
   // Protect all API endpoints: return 401 JSON for unauthenticated requests
   if (url.pathname.startsWith("/api")) {

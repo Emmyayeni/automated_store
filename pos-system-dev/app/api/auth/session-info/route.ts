@@ -1,25 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { 
-  createSuccessResponse, 
-  createAuthErrorResponse, 
-  createNotFoundResponse 
-} from "@/lib/standards/api-responses";
-import { 
-  handleApiError, 
-  createErrorContext, 
-  NotFoundError,
-  AuthenticationError 
-} from "@/lib/standards/error-handling";
-import { 
-  validateSession, 
-  createAuthenticationErrorResponse 
-} from "@/lib/standards/auth-patterns";
+import { createSuccessResponse } from "@/lib/standards/api-responses";
+import { handleApiError, createErrorContext } from "@/lib/standards/error-handling";
+import { validateSession, createAuthenticationErrorResponse } from "@/lib/standards/auth-patterns";
 
 // GET - Get current session information
 export async function GET(request: NextRequest) {
   try {
-    const context = createErrorContext(request);
-    
     // Use standardized session validation
     const validation = await validateSession();
     
@@ -56,8 +42,6 @@ export async function GET(request: NextRequest) {
 // POST - Refresh session
 export async function POST(request: NextRequest) {
   try {
-    const context = createErrorContext(request);
-    
     // Use standardized session validation
     const validation = await validateSession();
     

@@ -39,6 +39,7 @@ declare module "next-auth/jwt" {
 }
 
 export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET,
   adapter: DazzleAdapter(),
   providers: [
     CredentialsProvider({
