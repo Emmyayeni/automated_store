@@ -169,6 +169,25 @@ export default function TransfersPage() {
     }
   }
 
+  const handleQuickReceive = async (id: string, transferNum: string) => {
+    try {
+      const res = await fetch(`/api/transfers/${id}/receive`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: [] }),
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        toast.error(json.error || "Failed to confirm receipt")
+        return
+      }
+      toast.success(`Transfer ${transferNum} received! Destination inventory incremented.`)
+      fetchTransfers()
+    } catch {
+      toast.error("Network error confirming transfer")
+    }
+  }
+
   const handleRejectConfirm = async () => {
     if (!selectedTransferId) return
     if (!rejectionReason.trim()) {
@@ -438,16 +457,29 @@ export default function TransfersPage() {
 
                         {/* Step 3: Receive at Destination */}
                         {t.status === "IN_TRANSIT" && (
-                          <Button
-                            asChild
-                            size="sm"
-                            className="h-7 px-2.5 text-[11px] bg-emerald-700 hover:bg-emerald-800 text-white font-semibold flex items-center gap-1"
-                          >
-                            <Link href={`/admin/transfers/${t.id}/receive`}>
-                              <PackageCheck className="h-3 w-3" />
-                              Receive & Verify
-                            </Link>
-                          </Button>
+                          <div className="flex items-center gap-1.5">
+                            <Button
+                              onClick={() => handleQuickReceive(t.id, t.transferNumber)}
+                              size="sm"
+                              className="h-7 px-2.5 text-[11px] bg-emerald-700 hover:bg-emerald-800 text-white font-semibold flex items-center gap-1"
+                              title="Instantly confirm full delivery and add stock to destination inventory"
+                            >
+                              <CheckCircle2 className="h-3 w-3" />
+                              Quick Receive
+                            </Button>
+                            <Button
+                              asChild
+                              size="sm"
+                              variant="outline"
+                              className="h-7 px-2 text-[11px] border-slate-300 text-slate-700 hover:bg-slate-100 flex items-center gap-1"
+                              title="Verify item quantities and log discrepancies"
+                            >
+                              <Link href={`/admin/transfers/${t.id}/receive`}>
+                                <PackageCheck className="h-3 w-3" />
+                                Verify
+                              </Link>
+                            </Button>
+                          </div>
                         )}
 
                         {t.status === "RECEIVED" && (
@@ -513,13 +545,23 @@ export default function TransfersPage() {
                       </Button>
                     )}
                     {t.status === "IN_TRANSIT" && (
-                      <Button
-                        asChild
-                        size="sm"
-                        className="h-7 text-[10px] bg-emerald-700 text-white"
-                      >
-                        <Link href={`/admin/transfers/${t.id}/receive`}>Receive</Link>
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          onClick={() => handleQuickReceive(t.id, t.transferNumber)}
+                          size="sm"
+                          className="h-7 text-[10px] bg-emerald-700 text-white"
+                        >
+                          Quick Receive
+                        </Button>
+                        <Button
+                          asChild
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-[10px] border-slate-300"
+                        >
+                          <Link href={`/admin/transfers/${t.id}/receive`}>Verify</Link>
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </div>

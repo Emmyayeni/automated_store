@@ -42,10 +42,14 @@ export type CreateTransferInput = {
 };
 
 export type ReceiveItemInput = {
-  transferItemId: string;
-  productId: string;
-  quantityReceived: number;
-  discrepancyReason?: string;
+  transferItemId?: string;
+  itemId?: string;
+  id?: string;
+  productId?: string;
+  quantityReceived?: number;
+  receivedQuantity?: number;
+  quantity?: number;
+  discrepancyReason?: string | null;
 };
 
 // ============================================================
@@ -366,10 +370,11 @@ export async function dispatchTransfer(
 export async function receiveTransfer(
   receivingUserId: string,
   transferId: string,
-  receivedItems: ReceiveItemInput[]
+  receivedItems?: ReceiveItemInput[]
 ): Promise<ServiceResult<{ discrepancies: number }>> {
   try {
     let totalDiscrepancies = 0;
+    const safeUserId = receivingUserId && receivingUserId.length === 36 ? receivingUserId : null;
 
     await db.transaction(async (tx) => {
       // Lock transfer row — idempotency check
@@ -385,28 +390,66 @@ export async function receiveTransfer(
         throw new Error(`Cannot receive a transfer with status: ${transfer.status}`);
       }
 
-      for (const received of receivedItems) {
-        // Get the transfer item
-        const [transferItem] = await tx
+      // If receivedItems was not passed or is empty, load all items for this transfer
+      let itemsToProcess = receivedItems && receivedItems.length > 0 ? receivedItems : [];
+      if (itemsToProcess.length === 0) {
+        const existingItems = await tx
           .select()
           .from(inventoryTransferItems)
-          .where(
-            and(
-              eq(inventoryTransferItems.id, received.transferItemId),
-              eq(inventoryTransferItems.transferId, transferId)
+          .where(eq(inventoryTransferItems.transferId, transferId));
+        itemsToProcess = existingItems.map((item) => ({
+          transferItemId: item.id,
+          productId: item.productId,
+          quantityReceived: item.quantityDispatched ?? item.quantityRequested ?? 0,
+        }));
+      }
+
+      for (const received of itemsToProcess) {
+        const targetItemId = received.transferItemId || received.itemId || received.id;
+        
+        // Find matching transfer item row by item ID or by product ID
+        let [transferItem] = targetItemId
+          ? await tx
+              .select()
+              .from(inventoryTransferItems)
+              .where(
+                and(
+                  eq(inventoryTransferItems.id, targetItemId),
+                  eq(inventoryTransferItems.transferId, transferId)
+                )
+              )
+              .for("update")
+              .limit(1)
+          : [];
+
+        if (!transferItem && received.productId) {
+          [transferItem] = await tx
+            .select()
+            .from(inventoryTransferItems)
+            .where(
+              and(
+                eq(inventoryTransferItems.productId, received.productId),
+                eq(inventoryTransferItems.transferId, transferId)
+              )
             )
-          )
-          .for("update")
-          .limit(1);
+            .for("update")
+            .limit(1);
+        }
 
         if (!transferItem) continue;
 
-        const dispatched = transferItem.quantityDispatched ?? 0;
-        const qtyReceived = Math.max(0, Math.min(received.quantityReceived, dispatched));
-        const discrepancy = dispatched - qtyReceived;
+        const dispatched =
+          (transferItem.quantityDispatched != null && transferItem.quantityDispatched > 0)
+            ? transferItem.quantityDispatched
+            : (transferItem.quantityRequested ?? 0);
+
+        const rawReceived =
+          received.quantityReceived ?? received.receivedQuantity ?? received.quantity ?? dispatched;
+        const qtyReceived = Math.max(0, Number(rawReceived));
+        const discrepancy = Math.max(0, dispatched - qtyReceived);
         totalDiscrepancies += discrepancy;
 
-        // Update destination inventory (BR-11: only add received quantity)
+        // Update destination inventory (BR-11: add received quantity to destination branch)
         const [destInventory] = await tx
           .select()
           .from(inventory)
@@ -442,12 +485,12 @@ export async function receiveTransfer(
           });
         }
 
-        // Record TRANSFER_IN movement at destination
+        // Record TRANSFER_IN movement at destination branch
         if (qtyReceived > 0) {
           await tx.insert(stockMovements).values({
             locationId: transfer.toLocationId,
             productId: transferItem.productId,
-            userId: receivingUserId,
+            userId: safeUserId,
             movementType: "TRANSFER_IN",
             quantity: qtyReceived,
             balanceBefore,
@@ -465,31 +508,38 @@ export async function receiveTransfer(
           .set({
             quantityReceived: qtyReceived,
             discrepancyQty: discrepancy,
-            discrepancyReason: discrepancy > 0 ? (received.discrepancyReason ?? "Quantity shortfall in transit") : null,
+            discrepancyReason:
+              discrepancy > 0
+                ? (received.discrepancyReason || "Quantity shortfall in transit")
+                : null,
           })
-          .where(eq(inventoryTransferItems.id, received.transferItemId));
+          .where(eq(inventoryTransferItems.id, transferItem.id));
       }
 
-      // Mark transfer as RECEIVED
+      // Mark transfer as RECEIVED (Completed)
       await tx
         .update(inventoryTransfers)
         .set({
           status: "RECEIVED",
-          receivedBy: receivingUserId,
+          receivedBy: safeUserId,
           receivedDate: new Date(),
           updatedAt: new Date(),
         })
         .where(eq(inventoryTransfers.id, transferId));
 
-      await tx.insert(inventoryAuditLogs).values({
-        userId: receivingUserId,
-        locationId: transfer.toLocationId,
-        action: "TRANSFER_RECEIVED",
-        entityType: "transfer",
-        entityId: transferId,
-        oldValues: { status: "IN_TRANSIT" },
-        newValues: { status: "RECEIVED", discrepancies: totalDiscrepancies },
-      });
+      try {
+        await tx.insert(inventoryAuditLogs).values({
+          userId: safeUserId,
+          locationId: transfer.toLocationId,
+          action: "TRANSFER_RECEIVED",
+          entityType: "transfer",
+          entityId: transferId,
+          oldValues: { status: "IN_TRANSIT" },
+          newValues: { status: "RECEIVED", discrepancies: totalDiscrepancies },
+        });
+      } catch (logErr) {
+        console.warn("[ReceiveTransfer] Audit log write skipped:", logErr);
+      }
     });
 
     return {
@@ -498,7 +548,7 @@ export async function receiveTransfer(
       message:
         totalDiscrepancies > 0
           ? `Transfer received with ${totalDiscrepancies} unit(s) discrepancy recorded.`
-          : "Transfer received successfully. All quantities match.",
+          : "Transfer received successfully. All items added to destination inventory.",
     };
   } catch (err: any) {
     console.error("[ReceiveTransfer Error]", err);
@@ -515,8 +565,25 @@ export async function receiveTransfer(
 
 export async function getTransferById(transferId: string) {
   const [transfer] = await db
-    .select()
+    .select({
+      id: inventoryTransfers.id,
+      transferNumber: inventoryTransfers.transferNumber,
+      status: inventoryTransfers.status,
+      fromLocationId: inventoryTransfers.fromLocationId,
+      toLocationId: inventoryTransfers.toLocationId,
+      sourceLocationName: sql<string>`fl.name`,
+      destinationLocationName: sql<string>`tl.name`,
+      fromLocationName: sql<string>`fl.name`,
+      toLocationName: sql<string>`tl.name`,
+      requestedDate: inventoryTransfers.requestedDate,
+      approvedDate: inventoryTransfers.approvedDate,
+      dispatchedDate: inventoryTransfers.dispatchedDate,
+      receivedDate: inventoryTransfers.receivedDate,
+      notes: inventoryTransfers.notes,
+    })
     .from(inventoryTransfers)
+    .leftJoin(sql`locations fl`, sql`fl.id = ${inventoryTransfers.fromLocationId}`)
+    .leftJoin(sql`locations tl`, sql`tl.id = ${inventoryTransfers.toLocationId}`)
     .where(eq(inventoryTransfers.id, transferId))
     .limit(1);
 

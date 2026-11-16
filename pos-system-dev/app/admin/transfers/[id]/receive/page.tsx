@@ -58,7 +58,11 @@ export default function TransferReceivePage() {
         setTransfer(data)
         const qtys: Record<string, number> = {}
         ;(data.items || []).forEach((item: TransferItem) => {
-          qtys[item.id] = item.quantityDispatched ?? item.quantityRequested
+          const defaultCount =
+            item.quantityDispatched && item.quantityDispatched > 0
+              ? item.quantityDispatched
+              : item.quantityRequested || 1
+          qtys[item.id] = defaultCount
         })
         setReceivedQtys(qtys)
         setLoading(false)
@@ -83,8 +87,11 @@ export default function TransferReceivePage() {
 
     // Verify discrepancies have explanations
     for (const item of transfer.items) {
-      const received = receivedQtys[item.id] ?? item.quantityDispatched
-      const dispatched = item.quantityDispatched
+      const dispatched =
+        item.quantityDispatched && item.quantityDispatched > 0
+          ? item.quantityDispatched
+          : item.quantityRequested || 1
+      const received = receivedQtys[item.id] ?? dispatched
       if (received < dispatched && !discrepancyReasons[item.id]?.trim()) {
         toast.error(`Please provide a reason for the discrepancy on "${item.productName}"`)
         return
@@ -93,11 +100,21 @@ export default function TransferReceivePage() {
 
     setSubmitting(true)
     try {
-      const itemsPayload = transfer.items.map((item) => ({
-        itemId: item.id,
-        receivedQuantity: receivedQtys[item.id] ?? item.quantityDispatched,
-        discrepancyReason: discrepancyReasons[item.id] || null,
-      }))
+      const itemsPayload = transfer.items.map((item) => {
+        const dispatched =
+          item.quantityDispatched && item.quantityDispatched > 0
+            ? item.quantityDispatched
+            : item.quantityRequested || 1
+        const count = receivedQtys[item.id] ?? dispatched
+        return {
+          transferItemId: item.id,
+          itemId: item.id,
+          productId: item.productId,
+          quantityReceived: Number(count),
+          receivedQuantity: Number(count),
+          discrepancyReason: discrepancyReasons[item.id] || null,
+        }
+      })
 
       const res = await fetch(`/api/transfers/${id}/receive`, {
         method: "POST",
@@ -113,6 +130,7 @@ export default function TransferReceivePage() {
 
       toast.success("Transfer received successfully! Destination inventory incremented.")
       router.push("/admin/transfers")
+      router.refresh()
     } catch {
       toast.error("Network error confirming transfer")
     } finally {
@@ -198,8 +216,12 @@ export default function TransferReceivePage() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {transfer.items.map((item) => {
-                  const received = receivedQtys[item.id] ?? item.quantityDispatched
-                  const diff = item.quantityDispatched - received
+                  const dispatched =
+                    item.quantityDispatched && item.quantityDispatched > 0
+                      ? item.quantityDispatched
+                      : item.quantityRequested || 1
+                  const received = receivedQtys[item.id] ?? dispatched
+                  const diff = dispatched - received
                   const hasShortage = diff > 0
 
                   return (
@@ -212,14 +234,14 @@ export default function TransferReceivePage() {
                       </td>
 
                       <td className="py-3 px-4 text-center font-mono font-bold text-slate-700">
-                        {item.quantityDispatched} units
+                        {dispatched} units
                       </td>
 
                       <td className="py-3 px-4 text-center">
                         <Input
                           type="number"
                           min="0"
-                          max={item.quantityDispatched}
+                          max={dispatched}
                           value={received}
                           onChange={(e) =>
                             handleQtyChange(item.id, parseInt(e.target.value) || 0)
