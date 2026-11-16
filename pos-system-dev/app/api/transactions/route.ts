@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { transactions, transactionItems, products, inventory, stockMovements } from "@/lib/schema";
-import { eq, and } from "drizzle-orm";
+import { transactions, transactionItems, products, inventory, stockMovements, businesses, locations } from "@/lib/schema";
+import { eq, and, desc } from "drizzle-orm";
 import { adjustInventoryWithLog } from "@/lib/inventory-utils";
 import { 
   createSuccessResponse, 
@@ -145,19 +145,44 @@ export async function POST(request: NextRequest) {
     const taxAmount = subtotal * taxRate;
     const totalAmount = subtotal + taxAmount;
 
+    // Resolve businessId from location or database
+    let businessId = body.businessId;
+    if (!businessId && locationId) {
+      try {
+        const [loc] = await db
+          .select({ businessId: locations.businessId })
+          .from(locations)
+          .where(eq(locations.id, locationId));
+        businessId = loc?.businessId;
+      } catch (err) {
+        console.error("Error looking up businessId for transaction:", err);
+      }
+    }
+    if (!businessId) {
+      try {
+        const [biz] = await db.select({ id: businesses.id }).from(businesses).limit(1);
+        businessId = biz?.id;
+      } catch (err) {
+        console.error("Error getting default businessId:", err);
+      }
+    }
+
     // Generate transaction number
     const transactionNumber = `TXN-${Date.now()}`;
 
     // Prepare transaction values according to schema
     const transactionValues: any = {
       transactionNumber,
+      businessId,
       locationId,
       cashierId: userId,
       customerId: customerId || null,
-      subtotal: subtotal.toString(),
-      taxAmount: taxAmount.toString(),
-      total: totalAmount.toString(),
+      subtotal: subtotal.toFixed(2),
+      taxAmount: taxAmount.toFixed(2),
+      total: totalAmount.toFixed(2),
+      itemCount: items.reduce((sum: number, item: any) => sum + (item.quantity || 1), 0),
       paymentMethod,
+      status: "completed",
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -250,7 +275,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// GET: Get transactions by user (cashier)
+// GET: Get transactions by user (cashier) or location
 export async function GET(request: NextRequest) {
   try {
     const context = createErrorContext(request);
@@ -264,56 +289,122 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get("userId");
+    const requestedUserId = searchParams.get("userId");
+    const requestedLocationId = searchParams.get("locationId");
     
-    if (!userId) {
-      const validationErrors = [{
-        field: "userId",
-        message: VALIDATION_MESSAGES.REQUIRED("User ID"),
-        value: userId
-      }];
-      const response = createValidationErrorResponse(validationErrors);
-      return NextResponse.json(response, { status: 400 });
+    // Default to current user's ID if not provided
+    const targetUserId = requestedUserId || validation.user.id;
+    const isElevated = validation.user.role === "ADMIN" || validation.user.role === "BRANCH_MANAGER";
+
+    // Build query - most recent first
+    let txns = [];
+    
+    if (requestedUserId) {
+      // Specifically querying by userId
+      txns = await db
+        .select({
+          id: transactions.id,
+          transactionNumber: transactions.transactionNumber,
+          createdAt: transactions.createdAt,
+          total: transactions.total,
+          itemCount: transactions.itemCount,
+          paymentMethod: transactions.paymentMethod,
+          status: transactions.status,
+        })
+        .from(transactions)
+        .where(eq(transactions.cashierId, requestedUserId))
+        .orderBy(desc(transactions.createdAt));
     }
 
-    // Get transactions for this cashier, most recent first
-    const txns = await db
-      .select({
-        id: transactions.id,
-        transactionNumber: transactions.transactionNumber,
-        createdAt: transactions.createdAt,
-        total: transactions.total,
-        paymentMethod: transactions.paymentMethod,
-        status: transactions.status,
-      })
-      .from(transactions)
-      .where(eq(transactions.cashierId, userId))
-      .orderBy(transactions.createdAt);
+    // If no transactions found for the specified user and the user is an admin/manager viewing sales history,
+    // or if requested without specific user, return all recent store transactions
+    if (txns.length === 0 && (isElevated || !requestedUserId)) {
+      if (requestedLocationId || validation.user.locationId) {
+        const locId = requestedLocationId || validation.user.locationId;
+        txns = await db
+          .select({
+            id: transactions.id,
+            transactionNumber: transactions.transactionNumber,
+            createdAt: transactions.createdAt,
+            total: transactions.total,
+            itemCount: transactions.itemCount,
+            paymentMethod: transactions.paymentMethod,
+            status: transactions.status,
+          })
+          .from(transactions)
+          .where(eq(transactions.locationId, locId!))
+          .orderBy(desc(transactions.createdAt));
+      }
+      
+      // Fallback: if still 0, return all transactions
+      if (txns.length === 0) {
+        txns = await db
+          .select({
+            id: transactions.id,
+            transactionNumber: transactions.transactionNumber,
+            createdAt: transactions.createdAt,
+            total: transactions.total,
+            itemCount: transactions.itemCount,
+            paymentMethod: transactions.paymentMethod,
+            status: transactions.status,
+          })
+          .from(transactions)
+          .orderBy(desc(transactions.createdAt));
+      }
+    }
 
     // For each transaction, get item count and format date/time
     const results = await Promise.all(
       txns.map(async (txn) => {
-        // Get item count
+        // Get item details
         const items = await db
-          .select({ count: transactionItems.quantity })
+          .select({
+            quantity: transactionItems.quantity,
+            unitPrice: transactionItems.unitPrice,
+            lineTotal: transactionItems.lineTotal,
+            productName: products.name,
+          })
           .from(transactionItems)
+          .leftJoin(products, eq(transactionItems.productId, products.id))
           .where(eq(transactionItems.transactionId, txn.id));
 
-        // Format date/time using standardized formatting
-        const { formatDisplayDate, formatDisplayDateTime } = await import("@/lib/standards/formatting");
-        
+        const computedItemsCount = items.length > 0
+          ? items.reduce((sum, i) => sum + (i.quantity ?? 0), 0)
+          : (txn.itemCount ?? 1);
+
         const dateObj = txn.createdAt instanceof Date
           ? txn.createdAt
           : new Date(txn.createdAt as unknown as string);
 
+        const dateStr = dateObj.toLocaleDateString('en-GB', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric'
+        });
+
+        const timeStr = dateObj.toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        });
+
+        const numericTotal = typeof txn.total === "string" ? parseFloat(txn.total) : Number(txn.total || 0);
+
         return {
           id: txn.transactionNumber,
-          date: formatDisplayDate(dateObj),
-          time: formatDisplayDateTime(dateObj).split(' ')[1], // Extract time part
-          items: items.reduce((sum, i) => sum + (i.count ?? 0), 0),
-          total: formatPrice(typeof txn.total === "string" ? parseFloat(txn.total) : txn.total),
-          paymentMethod: txn.paymentMethod,
+          date: dateStr,
+          time: timeStr,
+          items: computedItemsCount,
+          total: numericTotal,
+          formattedTotal: formatPrice(numericTotal),
+          paymentMethod: txn.paymentMethod || "cash",
           status: txn.status ? txn.status.charAt(0).toUpperCase() + txn.status.slice(1) : "Completed",
+          details: items.map(i => ({
+            name: i.productName || "General Item",
+            quantity: i.quantity,
+            unitPrice: parseFloat(i.unitPrice?.toString() || "0"),
+            lineTotal: parseFloat(i.lineTotal?.toString() || "0"),
+          }))
         };
       })
     );

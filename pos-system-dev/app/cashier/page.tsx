@@ -207,17 +207,21 @@ export default function CashierDashboardPage() {
       if (res.ok) {
         const json = await res.json()
         const list = Array.isArray(json) ? json : json.data || []
-        const mapped: CompletedSale[] = list.slice(0, 8).map((t: any) => ({
-          transactionNumber: t.id || t.transactionNumber || "TXN-000",
-          time: t.time || (t.date ? `${t.date} ${t.time || ""}` : "Just now"),
-          itemsCount: t.items || 1,
-          subtotal: Number(t.total || 0) * 0.92,
-          taxAmount: Number(t.total || 0) * 0.08,
-          totalAmount: typeof t.total === "string" ? parseFloat(t.total) : Number(t.total || 0),
-          paymentMethod: t.paymentMethod || "cash",
-          items: [],
-          cashierName,
-        }))
+        const mapped: CompletedSale[] = list.slice(0, 8).map((t: any) => {
+          const rawTotal = typeof t.total === "string" ? parseFloat(t.total.replace(/[^0-9.-]+/g, "")) : Number(t.total || 0);
+          const safeTotal = isNaN(rawTotal) ? 0 : rawTotal;
+          return {
+            transactionNumber: t.id || t.transactionNumber || "TXN-000",
+            time: t.time || (t.date ? `${t.date} ${t.time || ""}` : "Just now"),
+            itemsCount: t.items || 1,
+            subtotal: safeTotal * 0.92,
+            taxAmount: safeTotal * 0.08,
+            totalAmount: safeTotal,
+            paymentMethod: t.paymentMethod || "cash",
+            items: t.details || [],
+            cashierName,
+          };
+        })
         setRecentTransactions(mapped)
       }
     } catch {

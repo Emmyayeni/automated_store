@@ -38,10 +38,16 @@ interface OrderTransaction {
   total: number
   paymentMethod: string
   status: string
+  details?: Array<{
+    name: string
+    quantity: number
+    unitPrice: number
+    lineTotal: number
+  }>
 }
 
 export default function CashierOrdersPage() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const userId = session?.user?.id
   const cashierName = session?.user?.name || "Cashier"
   const storeName = (session?.user as any)?.store?.name || (session?.user as any)?.branchName || "Main Supermarket Branch"
@@ -53,10 +59,10 @@ export default function CashierOrdersPage() {
   const [showReceipt, setShowReceipt] = useState(false)
 
   const fetchTransactions = async () => {
-    if (!userId) return
     setLoading(true)
     try {
-      const res = await fetch(`/api/transactions?userId=${userId}`)
+      const url = userId ? `/api/transactions?userId=${userId}` : `/api/transactions`
+      const res = await fetch(url)
       if (res.ok) {
         const json = await res.json()
         const rawList = Array.isArray(json) ? json : json.data || []
@@ -69,6 +75,7 @@ export default function CashierOrdersPage() {
             total: typeof t.total === "string" ? parseFloat(t.total.replace(/[^0-9.-]+/g, "")) : Number(t.total || 0),
             paymentMethod: t.paymentMethod || "cash",
             status: t.status || "Completed",
+            details: t.details || []
           }))
         )
       }
@@ -81,8 +88,10 @@ export default function CashierOrdersPage() {
   }
 
   useEffect(() => {
-    fetchTransactions()
-  }, [userId])
+    if (status !== "loading") {
+      fetchTransactions()
+    }
+  }, [userId, status])
 
   const filtered = useMemo(() => {
     return transactions.filter(
@@ -291,6 +300,23 @@ export default function CashierOrdersPage() {
                   <span className="uppercase font-bold">{selectedTxn.paymentMethod}</span>
                 </div>
               </div>
+
+              {selectedTxn.details && selectedTxn.details.length > 0 && (
+                <div className="border-b border-dashed border-slate-200 py-2 space-y-1">
+                  <div className="flex justify-between text-[10px] text-slate-400 font-bold uppercase pb-1">
+                    <span>Product</span>
+                    <span>Qty × Rate</span>
+                    <span className="text-right">Total</span>
+                  </div>
+                  {selectedTxn.details.map((d, idx) => (
+                    <div key={idx} className="flex justify-between text-[11px] text-slate-700">
+                      <span className="truncate max-w-[130px]">{d.name}</span>
+                      <span>{d.quantity} × ₦{d.unitPrice.toLocaleString()}</span>
+                      <span className="text-right font-medium">₦{d.lineTotal.toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <div className="py-2 space-y-1 text-[11px]">
                 <div className="flex justify-between">
