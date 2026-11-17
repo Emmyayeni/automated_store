@@ -39,47 +39,26 @@ export async function GET(request: NextRequest) {
       searchParams.get("startDate") ||
       new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     const endDateStr = searchParams.get("endDate") || new Date().toISOString();
-    const locationId = searchParams.get("locationId");
+    let locationId = searchParams.get("locationId");
 
-    if (!locationId || locationId.trim() === "") {
-      throw new ValidationError("locationId is required", "locationId", locationId, context);
+    // If branch manager, restrict to their assigned location
+    if (accessControl.user.role === "BRANCH_MANAGER" && accessControl.user.locationId) {
+      locationId = accessControl.user.locationId;
     }
 
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
 
-    // Get all user IDs for the location
-    const userRows = await db
-      .select({ id: users.id })
-      .from(users)
-      .where(eq(users.locationId, locationId));
-    const userIds = userRows.map((u) => u.id);
+    // Build conditions array
+    const conditions = [
+      eq(transactions.status, "completed"),
+      gte(transactions.createdAt, startDate),
+      lte(transactions.createdAt, endDate),
+    ];
 
-    // Debug log
-    console.log("locationId:", locationId, "userIds:", userIds);
-
-    if (!userIds.length) {
-      return NextResponse.json(createSuccessResponse({
-        summary: {
-          total_transactions: 0,
-          total_revenue: 0,
-          total_tax: 0,
-          average_transaction: 0,
-        },
-        dailySales: [],
-        topProducts: [],
-        paymentMethods: [],
-        dateRange: {
-          start: formatDate(startDate),
-          end: formatDate(endDate)
-        },
-        generatedAt: new Date().toISOString(),
-        generatedBy: accessControl.user.id
-      }));
+    if (locationId && locationId !== "all" && locationId.trim() !== "") {
+      conditions.push(eq(transactions.locationId, locationId));
     }
-
-    // Helper for inArray only if userIds is not empty
-    const userFilter = inArray(transactions.cashierId, userIds);
 
     // Daily sales summary
     const dailySales = await db
@@ -91,14 +70,7 @@ export async function GET(request: NextRequest) {
         average_sale: dsql`AVG(${transactions.total})`,
       })
       .from(transactions)
-      .where(
-        and(
-          eq(transactions.status, "completed"),
-          gte(transactions.createdAt, startDate),
-          lte(transactions.createdAt, endDate),
-          userFilter
-        )
-      )
+      .where(and(...conditions))
       .groupBy(dsql`DATE(${transactions.createdAt})`)
       .orderBy(desc(dsql`DATE(${transactions.createdAt})`));
 
@@ -113,14 +85,7 @@ export async function GET(request: NextRequest) {
       .from(transactionItems)
       .innerJoin(products, eq(transactionItems.productId, products.id))
       .innerJoin(transactions, eq(transactionItems.transactionId, transactions.id))
-      .where(
-        and(
-          eq(transactions.status, "completed"),
-          gte(transactions.createdAt, startDate),
-          lte(transactions.createdAt, endDate),
-          userFilter
-        )
-      )
+      .where(and(...conditions))
       .groupBy(products.id, products.name, products.sku)
       .orderBy(desc(dsql`SUM(${transactionItems.quantity})`))
       .limit(10);
@@ -133,14 +98,7 @@ export async function GET(request: NextRequest) {
         total_amount: dsql`SUM(${transactions.total})`,
       })
       .from(transactions)
-      .where(
-        and(
-          eq(transactions.status, "completed"),
-          gte(transactions.createdAt, startDate),
-          lte(transactions.createdAt, endDate),
-          userFilter
-        )
-      )
+      .where(and(...conditions))
       .groupBy(transactions.paymentMethod)
       .orderBy(desc(dsql`SUM(${transactions.total})`));
 
@@ -153,14 +111,7 @@ export async function GET(request: NextRequest) {
         average_transaction: dsql`AVG(${transactions.total})`,
       })
       .from(transactions)
-      .where(
-        and(
-          eq(transactions.status, "completed"),
-          gte(transactions.createdAt, startDate),
-          lte(transactions.createdAt, endDate),
-          userFilter
-        )
-      );
+      .where(and(...conditions));
 
     const summary = summaryArr[0] || {
       total_transactions: 0,

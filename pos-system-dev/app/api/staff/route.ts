@@ -17,7 +17,7 @@ export async function GET(request: Request) {
   // If role is provided, filter by role as well
   if (role) {
     // Cast role to the allowed type
-    const allowedRoles = ['ADMIN', 'MANAGER', 'CASHIER'] as const;
+    const allowedRoles = ['ADMIN', 'MANAGER', 'BRANCH_MANAGER', 'CLERK', 'CASHIER'] as const;
     type Role = typeof allowedRoles[number];
     if (allowedRoles.includes(role as Role)) {
       query = db.select().from(users).where(

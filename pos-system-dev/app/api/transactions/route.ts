@@ -43,22 +43,33 @@ export async function POST(request: NextRequest) {
 
     const { customerId, userId, locationId, items, paymentMethod, taxRate = 0.08 } = body;
 
+    const effectiveUserId = userId || validation.user.id;
+    let effectiveLocationId = locationId || validation.user.locationId;
+    if (!effectiveLocationId) {
+      try {
+        const [firstLoc] = await db.select({ id: locations.id }).from(locations).limit(1);
+        effectiveLocationId = firstLoc?.id;
+      } catch (err) {
+        console.error("Error resolving fallback locationId:", err);
+      }
+    }
+
     // Validate required fields
     const validationErrors = [];
     
-    if (!userId) {
+    if (!effectiveUserId) {
       validationErrors.push({
         field: "userId",
         message: VALIDATION_MESSAGES.REQUIRED("User ID"),
-        value: userId
+        value: effectiveUserId
       });
     }
     
-    if (!locationId) {
+    if (!effectiveLocationId) {
       validationErrors.push({
         field: "locationId",
         message: VALIDATION_MESSAGES.REQUIRED("Location ID"),
-        value: locationId
+        value: effectiveLocationId
       });
     }
     
@@ -121,7 +132,7 @@ export async function POST(request: NextRequest) {
         .leftJoin(products, eq(inventory.productId, products.id))
         .where(
           and(
-            eq(inventory.locationId, locationId),
+            eq(inventory.locationId, effectiveLocationId),
             eq(inventory.productId, item.productId)
           )
         );
@@ -147,12 +158,12 @@ export async function POST(request: NextRequest) {
 
     // Resolve businessId from location or database
     let businessId = body.businessId;
-    if (!businessId && locationId) {
+    if (!businessId && effectiveLocationId) {
       try {
         const [loc] = await db
           .select({ businessId: locations.businessId })
           .from(locations)
-          .where(eq(locations.id, locationId));
+          .where(eq(locations.id, effectiveLocationId));
         businessId = loc?.businessId;
       } catch (err) {
         console.error("Error looking up businessId for transaction:", err);
@@ -174,8 +185,8 @@ export async function POST(request: NextRequest) {
     const transactionValues: any = {
       transactionNumber,
       businessId,
-      locationId,
-      cashierId: userId,
+      locationId: effectiveLocationId,
+      cashierId: effectiveUserId,
       customerId: customerId || null,
       subtotal: subtotal.toFixed(2),
       taxAmount: taxAmount.toFixed(2),
@@ -216,12 +227,12 @@ export async function POST(request: NextRequest) {
       // Update inventory with proper logging
       try {
         await adjustInventoryWithLog({
-          locationId,
+          locationId: effectiveLocationId,
           productId: item.productId,
           adjustmentType: 'sale',
           adjustmentQuantity: -item.quantity, // Negative for sale
           reason: `Sale - Transaction ${transactionNumber}`,
-          adjustedBy: userId,
+          adjustedBy: effectiveUserId,
           referenceId: transactionId,
           referenceType: 'transaction',
           notes: `Sold ${item.quantity} units via POS`,
@@ -231,12 +242,12 @@ export async function POST(request: NextRequest) {
         const [currentInv] = await db
           .select({ quantity: inventory.quantity })
           .from(inventory)
-          .where(and(eq(inventory.locationId, locationId), eq(inventory.productId, item.productId)));
+          .where(and(eq(inventory.locationId, effectiveLocationId), eq(inventory.productId, item.productId)));
 
         const newQty = currentInv?.quantity ?? 0;
         await db.insert(stockMovements).values({
           productId: item.productId,
-          locationId,
+          locationId: effectiveLocationId,
           movementType: 'STOCK_OUT',
           reason: 'SALE',
           quantity: item.quantity,
@@ -244,7 +255,7 @@ export async function POST(request: NextRequest) {
           balanceAfter: newQty,
           reference: transactionNumber,
           notes: `POS sale #${transactionNumber}`,
-          userId,
+          userId: effectiveUserId,
         });
       } catch (error) {
         console.error(`Error adjusting inventory for product ${item.productId}:`, error);
